@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { SCENE_ANIMATION_DURATION } from '../constants/animation';
 import { easeInBack, easeOutBack } from '../utils/math';
 
@@ -36,7 +37,6 @@ export class AnimationManager {
                 this.sceneManager.setVisibility(false);
                 this.sceneManager.scene.scale.setScalar(0);
             } else {
-                // Se stiamo entrando, manteniamo la scala a 1
                 this.sceneManager.scene.scale.setScalar(1);
             }
             
@@ -45,13 +45,15 @@ export class AnimationManager {
             return;
         }
         
-        // Usa gli easing back per entrambe le animazioni
         const progress = this.isSceneEntering ? 
             easeOutBack(this.sceneAnimationProgress) : 
             1 - easeInBack(this.sceneAnimationProgress);
         
-        // Applica lo scale a tutta la scena
         this.sceneManager.scene.scale.setScalar(progress);
+        
+        if (this.wordManager) {
+            this.wordManager.updateWordsAnimation(progress, this.isSceneEntering);
+        }
     }
 
     startEnterAnimation() {
@@ -60,6 +62,10 @@ export class AnimationManager {
         this.sceneAnimationProgress = 0;
         this.sceneManager.setVisibility(true);
         this.sceneManager.scene.scale.setScalar(0);
+        
+        if (this.wordManager && this.wordManager.isInitialized()) {
+            this.wordManager.createTextSphere();
+        }
     }
 
     startExitAnimation() {

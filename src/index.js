@@ -1,6 +1,7 @@
 import { SceneManager } from './managers/SceneManager';
 import { AnimationManager } from './managers/AnimationManager';
 import { WordManager } from './managers/WordManager';
+import { TextManager } from './utils/TextManager';
 
 class AiAnimation {
     constructor(config = {}) {
@@ -12,18 +13,26 @@ class AiAnimation {
             throw new Error(`Container element with id "${containerId}" not found`);
         }
 
-        // Inizializzazione managers
-        this.sceneManager = new SceneManager();
+        // Creiamo prima il TextManager
+        this.textManager = new TextManager();
+        
+        // Passiamo il TextManager al WordManager
+        this.wordManager = new WordManager(this.textManager);
+        
+        // Passiamo il wordManager allo SceneManager
+        this.sceneManager = new SceneManager(this.wordManager);
         this.animationManager = new AnimationManager();
-        this.wordManager = new WordManager(''); // Inizializza con stringa vuota
 
         this.init();
         this.setupEventListeners();
     }
 
-    init() {
+    async init() {
         this.sceneManager.init(this.container);
-        this.wordManager.init(this.sceneManager.scene);
+        
+        // Aspettiamo che il font sia caricato
+        await this.wordManager.init(this.sceneManager.scene);
+        
         this.animationManager.init(
             this.sceneManager, 
             this.wordManager

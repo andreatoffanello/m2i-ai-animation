@@ -6,10 +6,13 @@ import particleFrag from '../shaders/particle.frag?raw';
 import innerSphereVert from '../shaders/innerSphere.vert?raw';
 import innerSphereFrag from '../shaders/innerSphere.frag?raw';
 import { loadShader } from '../utils/shaderUtils';
+import Scene from '../scene/Scene';
+import { GradientIcosahedron } from '../objects/GradientIcosahedron';
 
 export class SceneManager {
-    constructor() {
-        this.scene = new THREE.Scene();
+    constructor(wordManager) {
+        this.wordManager = wordManager;
+        this.scene = new Scene(this.wordManager);
         this.camera = null;
         this.renderer = null;
         this.particles = null;
@@ -25,6 +28,8 @@ export class SceneManager {
         this.mouseY = 0;
         this.windowHalfX = 0;
         this.windowHalfY = 0;
+
+        this.icosahedron = null;
     }
 
     init(container) {
@@ -45,7 +50,12 @@ export class SceneManager {
         this.setupRenderer(width, height);
         this.setupParticles();
         this.setupInnerSphere();
+        this.setupIcosahedron();
         this.setupMouseControls();
+        
+        // Nascondi tutto inizialmente
+        this.setVisibility(false);
+        this.scene.scale.setScalar(0); // Nascondi anche la scena
         
         this.renderContainer.appendChild(this.renderer.domElement);
     }
@@ -159,6 +169,11 @@ export class SceneManager {
         this.scene.add(this.innerSphere);
     }
 
+    setupIcosahedron() {
+        this.icosahedron = new GradientIcosahedron(2.2, 1);
+        this.scene.add(this.icosahedron.mesh);
+    }
+
     setupMouseControls() {
         document.addEventListener('mousemove', this.onMouseMove.bind(this));
     }
@@ -231,6 +246,10 @@ export class SceneManager {
         this.innerSphere.material.uniforms.time.value = time * PULSE_SPEED;
         const pulseFactor = 1 + Math.sin(time * PULSE_SPEED) * PULSE_AMPLITUDE;
         this.innerSphere.scale.setScalar(pulseFactor);
+
+        if (this.icosahedron) {
+            this.icosahedron.update(time);
+        }
     }
 
     onResize(width, height) {
@@ -258,6 +277,11 @@ export class SceneManager {
         this.scene.remove(this.particles);
         this.scene.remove(this.innerSphere);
         
+        if (this.icosahedron) {
+            this.icosahedron.dispose();
+            this.scene.remove(this.icosahedron.mesh);
+        }
+        
         document.removeEventListener('mousemove', this.onMouseMove);
         
         if (this.renderContainer && this.renderContainer.parentNode) {
@@ -268,7 +292,13 @@ export class SceneManager {
     }
 
     setVisibility(visible) {
-        this.particles.visible = visible;
-        this.innerSphere.visible = visible;
+        if (this.particles) this.particles.visible = visible;
+        if (this.innerSphere) this.innerSphere.visible = visible;
+        if (this.scene.wordMeshes) {
+            this.scene.wordMeshes.forEach(mesh => mesh.visible = visible);
+        }
+        if (this.icosahedron) {
+            this.icosahedron.mesh.visible = visible;
+        }
     }
 }

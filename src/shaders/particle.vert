@@ -116,7 +116,7 @@ void main() {
     vColor = color;
     vec3 pos = position;
     
-    float noiseVal = cnoise(pos * noiseFrequency + time * 0.3);
+    float noiseVal = cnoise(pos * noiseFrequency + time * 0.4);
     float displacement = noiseVal * noiseAmplitude;
     
     float pulse = 1.0 + sin(pulseTime * 0.8) * 0.05;

@@ -6,8 +6,12 @@ import { PULSE_SPEED, MOVEMENT_TIME, PROCESSING_TIME, TOTAL_ANIMATION_TIME } fro
 import { AnimatedLine } from '../classes/AnimatedLine';
 
 export class WordManager {
-    constructor(text) {
-        this.text = text;
+    constructor(textManager) {
+        if (!textManager) {
+            throw new Error('TextManager is required');
+        }
+        this.textManager = textManager;
+        this.text = '';
         this.scene = null;
         this.wordMeshes = [];
         this.wordStates = new Map();
@@ -16,20 +20,40 @@ export class WordManager {
         this.font = null;
         
         // Costanti per l'animazione delle parole
-        this.MAX_ACTIVE_WORDS = 20;
+        this.MAX_ACTIVE_WORDS = 15;
         this.PROCESSING_COLORS = [
             new THREE.Color("#FBD23D"), // giallo
             new THREE.Color("#3EECFF"), // azzurro
             new THREE.Color("#EF6F34"), // arancione
             new THREE.Color("#5C20DD")  // viola
         ];
+        this._isInitialized = false;
+
+        // Aggiungiamo costanti per l'animazione
+        this.WORD_ANIMATION = {
+            MOVE_OUT_DURATION: 1.0,    // Tempo per andare dal centro alla superficie
+            SURFACE_DURATION: 2.0,      // Tempo sulla superficie
+            MOVE_IN_DURATION: 1.0,      // Tempo per tornare al centro
+            TYPING_SPEED: 0.1          // Velocità di digitazione
+        };
     }
 
     init(scene) {
+        console.log('WordManager init');
         this.scene = scene;
-        this.loadFont().then(() => {
-            this.createTextSphere();
+        return this.loadFont().then(() => {
+            console.log('Font loaded');
+            this._isInitialized = true;
         });
+    }
+
+    isInitialized() {
+        return this._isInitialized;
+    }
+
+    getWords() {
+        console.log('WordManager getting words');
+        return this.textManager.getText();
     }
 
     async loadFont() {
@@ -44,51 +68,204 @@ export class WordManager {
         });
     }
 
-    createCursor() {
-        const cursorGeometry = new TextGeometry('_', {
-            font: this.font,
-            size: 0.08,
-            height: 0.01
-        });
-        
-        const cursorMaterial = new THREE.MeshBasicMaterial({ 
-            transparent: true,
-            opacity: 1.0,
-            side: THREE.DoubleSide
-        });
-        
-        const cursor = new THREE.Mesh(cursorGeometry, cursorMaterial);
-        cursor.renderOrder = 999;
-        return cursor;
+    update(time) {
+        // Aggiorna le parole attive
+        if (this.wordMeshes && this.wordMeshes.length > 0) {
+            this.updateWords(time);
+        }
     }
 
-    getRandomSpherePosition() {
-        const phi = Math.random() * Math.PI * 2;
-        const theta = Math.random() * Math.PI;
-        return { phi, theta };
+    updateWords(time) {
+        // Attiva nuove parole solo se non abbiamo raggiunto il massimo
+        if (this.activeWords.size < this.MAX_ACTIVE_WORDS) {
+            this.wordMeshes.forEach(mesh => {
+                const state = this.wordStates.get(mesh);
+                if (!state.active && Math.random() < 0.01) {
+                    this.activateWord(mesh);
+                }
+            });
+        }
+
+        // Aggiorna le parole attive
+        this.activeWords.forEach(word => {
+            const state = this.wordStates.get(word);
+            if (state.active) {
+                this.updateWordAnimation(word, state, time);
+            }
+        });
+    }
+
+    updateWordAnimation(word, state, time) {
+        const totalDuration = this.WORD_ANIMATION.MOVE_OUT_DURATION + 
+                            this.WORD_ANIMATION.SURFACE_DURATION + 
+                            this.WORD_ANIMATION.MOVE_IN_DURATION;
+        
+        state.progress += 0.016;
+        const progress = state.progress;
+
+        if (progress >= totalDuration) {
+            this.deactivateWord(word, state);
+            return;
+        }
+
+        // Fase 1: Movimento verso l'esterno
+        if (progress < this.WORD_ANIMATION.MOVE_OUT_DURATION) {
+            const p = progress / this.WORD_ANIMATION.MOVE_OUT_DURATION;
+            const eased = this.easeOutBack(p);
+            const radius = TEXT_MIN_RADIUS + (TEXT_SPHERE_RADIUS - TEXT_MIN_RADIUS) * eased;
+            
+            word.position.setFromSphericalCoords(
+                radius,
+                state.originalPosition.theta,
+                state.originalPosition.phi
+            );
+            word.scale.setScalar(eased);
+            
+            // Mostra gradualmente le prime lettere
+            const initialLettersCount = Math.floor(state.letters.length * 0.3);
+            state.letters.forEach((letter, i) => {
+                if (i < initialLettersCount) {
+                    letter.material.opacity = eased * 0.5;
+                } else {
+                    letter.material.opacity = 0;
+                }
+            });
+        }
+        // Fase 2: Sulla superficie
+        else if (progress < this.WORD_ANIMATION.MOVE_OUT_DURATION + this.WORD_ANIMATION.SURFACE_DURATION) {
+            const surfaceProgress = (progress - this.WORD_ANIMATION.MOVE_OUT_DURATION) / 
+                                  this.WORD_ANIMATION.SURFACE_DURATION;
+            
+            // Animazione di digitazione
+            const typedLetters = Math.floor(surfaceProgress * state.letters.length);
+            state.letters.forEach((letter, i) => {
+                if (i <= typedLetters) {
+                    letter.material.opacity = 0.5;
+                } else {
+                    letter.material.opacity = 0;
+                }
+            });
+        }
+        // Fase 3: Ritorno al centro
+        else {
+            const moveInProgress = (progress - (this.WORD_ANIMATION.MOVE_OUT_DURATION + 
+                                  this.WORD_ANIMATION.SURFACE_DURATION)) / 
+                                  this.WORD_ANIMATION.MOVE_IN_DURATION;
+            const eased = this.easeInBack(moveInProgress);
+            const radius = TEXT_SPHERE_RADIUS - (TEXT_SPHERE_RADIUS - TEXT_MIN_RADIUS) * eased;
+            
+            word.position.setFromSphericalCoords(
+                radius,
+                state.originalPosition.theta,
+                state.originalPosition.phi
+            );
+            
+            // Fade out di tutte le lettere
+            state.letters.forEach(letter => {
+                letter.material.opacity = 0.5 * (1 - eased);
+            });
+        }
+
+        word.lookAt(0, 0, 0);
+        word.rotateY(Math.PI);
+    }
+
+    activateWord(mesh) {
+        const state = this.wordStates.get(mesh);
+        state.active = true;
+        state.progress = 0;
+        
+        // Reset della posizione iniziale
+        mesh.position.setFromSphericalCoords(
+            TEXT_MIN_RADIUS,
+            state.originalPosition.theta,
+            state.originalPosition.phi
+        );
+        mesh.scale.set(0, 0, 0);
+        
+        this.activeWords.add(mesh);
+    }
+
+    deactivateWord(word, state) {
+        state.active = false;
+        state.progress = 0;
+        this.activeWords.delete(word);
+        
+        // Nascondi tutte le lettere
+        state.letters.forEach(letter => {
+            letter.material.opacity = 0;
+        });
+        
+        // Resetta la posizione
+        word.position.setFromSphericalCoords(
+            TEXT_MIN_RADIUS,
+            state.originalPosition.theta,
+            state.originalPosition.phi
+        );
+        word.scale.set(0, 0, 0);
+    }
+
+    easeOutBack(x) {
+        const c1 = 1.70158;
+        const c3 = c1 + 1;
+        return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+    }
+
+    easeInBack(x) {
+        const c1 = 1.70158;
+        const c3 = c1 + 1;
+        return c3 * x * x * x - c1 * x * x;
+    }
+
+    updateText(text) {
+        console.log('Updating text:', text);
+        this.text = text;
+        
+        // Rimuovi le parole esistenti
+        if (this.wordMeshes && this.wordMeshes.length > 0) {
+            this.wordMeshes.forEach(mesh => {
+                if (this.scene) {
+                    this.scene.remove(mesh);
+                }
+                if (mesh.geometry) mesh.geometry.dispose();
+                if (mesh.material) {
+                    if (Array.isArray(mesh.material)) {
+                        mesh.material.forEach(mat => mat.dispose());
+                    } else {
+                        mesh.material.dispose();
+                    }
+                }
+            });
+        }
+
+        // Pulisci le strutture dati
+        this.wordMeshes = [];
+        this.wordStates.clear();
+        this.activeWords.clear();
+        this.activeLines.forEach(line => {
+            line.dispose();
+            if (this.scene) {
+                this.scene.remove(line.line);
+            }
+        });
+        this.activeLines.clear();
+
+        // Ricrea la sfera di testo
+        if (this._isInitialized && this.scene) {
+            this.createTextSphere();
+        }
     }
 
     createTextSphere() {
-        // Pulisci prima eventuali parole esistenti
-        this.wordMeshes.forEach(mesh => {
-            this.scene.remove(mesh);
-            mesh.children.forEach(child => {
-                if (child.geometry) child.geometry.dispose();
-                if (child.material) child.material.dispose();
-            });
-        });
-        this.wordMeshes = [];
-        this.wordStates.clear();
-        
         // Filtra e prepara le parole
         let words = this.text.split(' ')
             .filter(word => word.length > 4)
             .map(word => word.trim())
-            .filter(word => word); // rimuove stringhe vuote
+            .filter(word => word);
         
         // Se non ci sono parole valide, usa un placeholder
         if (words.length === 0) {
-            words = ['placeholder'];
+            words = this.textManager.getText();
         }
         
         // Crea l'array di 200 parole
@@ -112,6 +289,11 @@ export class WordManager {
                 
                 const wordGroup = new THREE.Group();
                 
+                // Scegli un colore random dalla palette
+                const randomColor = this.PROCESSING_COLORS[
+                    Math.floor(Math.random() * this.PROCESSING_COLORS.length)
+                ];
+                
                 // Crea le lettere
                 letters.forEach((letter) => {
                     const letterGeometry = new TextGeometry(letter, {
@@ -121,7 +303,7 @@ export class WordManager {
                     });
                     
                     const letterMaterial = new THREE.MeshBasicMaterial({ 
-                        color: new THREE.Color(0x3EECFF),
+                        color: randomColor,  // Usa il colore random
                         transparent: true,
                         opacity: 0.0
                     });
@@ -137,10 +319,6 @@ export class WordManager {
                     letterMeshes.push(letterMesh);
                     wordGroup.add(letterMesh);
                 });
-                
-                // Aggiungi il cursore
-                const cursor = this.createCursor();
-                wordGroup.add(cursor);
                 
                 // Centra il gruppo
                 wordGroup.children.forEach(letter => {
@@ -160,156 +338,25 @@ export class WordManager {
                 this.wordStates.set(wordGroup, {
                     active: false,
                     progress: 0,
-                    startRadius: TEXT_MIN_RADIUS,
-                    targetRadius: TEXT_SPHERE_RADIUS,
                     letters: letterMeshes,
-                    cursor: cursor,
-                    processingColor: this.PROCESSING_COLORS[
-                        Math.floor(Math.random() * this.PROCESSING_COLORS.length)
-                    ],
-                    originalColor: new THREE.Color(0x3EECFF),
-                    initialLettersShown: 3,
                     originalPosition: randomPos,
                     hasCreatedLine: false,
                     isOnSurface: false
                 });
                 
                 this.wordMeshes.push(wordGroup);
-                this.scene.add(wordGroup);
+                if (this.scene) {
+                    this.scene.add(wordGroup);
+                }
             } catch (error) {
                 console.warn(`Failed to create word mesh for "${word}"`, error);
             }
         });
-    }
 
-    updateWords(time) {
-        // Attiva nuove parole se possibile
-        if (this.activeWords.size < this.MAX_ACTIVE_WORDS) {
-            this.wordMeshes.forEach(mesh => {
-                const state = this.wordStates.get(mesh);
-                if (!state.active && Math.random() < 0.01 && 
-                    this.activeWords.size < this.MAX_ACTIVE_WORDS) {
-                    this.activateWord(mesh, state);
-                }
-            });
+        // Dopo aver creato tutte le mesh
+        if (this.scene) {
+            this.scene.updateWordMeshes(this.wordMeshes);
         }
-
-        // Aggiorna le parole attive
-        this.activeWords.forEach(wordGroup => {
-            const state = this.wordStates.get(wordGroup);
-            if (state.active) {
-                this.updateWordAnimation(wordGroup, state, time);
-            }
-        });
-
-        // Aggiorna e rimuovi le linee completate
-        this.activeLines.forEach(line => {
-            if (!line.update(time)) {
-                line.dispose();
-                this.activeLines.delete(line);
-            }
-        });
-    }
-
-    updateWordAnimation(wordGroup, state, time) {
-        state.progress += 0.016 / TOTAL_ANIMATION_TIME;
-
-        if (state.progress >= 1.0) {
-            this.deactivateWord(wordGroup, state);
-        } else {
-            const totalProgress = state.progress * TOTAL_ANIMATION_TIME;
-            
-            if (totalProgress < MOVEMENT_TIME) {
-                this.handleMovementPhase(wordGroup, state, totalProgress, time);
-            } 
-            else if (totalProgress < MOVEMENT_TIME + PROCESSING_TIME) {
-                this.handleProcessingPhase(wordGroup, state, totalProgress, time);
-            }
-            else {
-                this.handleReturnPhase(wordGroup, state, totalProgress);
-            }
-        }
-    }
-
-    updateWordsAnimation(progress, isEntering) {
-        this.wordMeshes.forEach((mesh, index) => {
-            const delay = index * 0.1;
-            const wordProgress = Math.max(0, Math.min(1, (progress - delay) * 2));
-            
-            if (isEntering) {
-                mesh.position.normalize().multiplyScalar(wordProgress * TEXT_SPHERE_RADIUS);
-            } else {
-                mesh.position.normalize().multiplyScalar((1 - wordProgress) * TEXT_SPHERE_RADIUS);
-            }
-            
-            const state = this.wordStates.get(mesh);
-            state.letters.forEach(letter => {
-                letter.material.opacity = wordProgress * 0.5;
-            });
-        });
-    }
-
-    updateText(newText) {
-        // Rimuovi tutte le parole e le linee esistenti
-        this.wordMeshes.forEach(mesh => {
-            this.scene.remove(mesh);
-            mesh.children.forEach(child => {
-                if (child.geometry) child.geometry.dispose();
-                if (child.material) child.material.dispose();
-            });
-        });
-        
-        this.activeLines.forEach(line => {
-            line.dispose();
-            this.scene.remove(line.line);
-        });
-        
-        // Pulisci le strutture dati
-        this.wordMeshes = [];
-        this.wordStates.clear();
-        this.activeWords.clear();
-        this.activeLines.clear();
-        
-        // Imposta il nuovo testo e ricrea la sfera di testo
-        this.text = newText;
-        this.createTextSphere();
-    }
-
-    dispose() {
-        // Rimuovi e pulisci tutte le parole
-        this.wordMeshes.forEach(mesh => {
-            this.scene.remove(mesh);
-            mesh.children.forEach(child => {
-                if (child.geometry) child.geometry.dispose();
-                if (child.material) {
-                    if (Array.isArray(child.material)) {
-                        child.material.forEach(mat => mat.dispose());
-                    } else {
-                        child.material.dispose();
-                    }
-                }
-            });
-            mesh.clear(); // Rimuove tutti i figli
-        });
-        
-        // Rimuovi e pulisci tutte le linee
-        this.activeLines.forEach(line => {
-            line.dispose();
-            this.scene.remove(line.line);
-        });
-        
-        // Pulisci le strutture dati
-        this.wordMeshes = [];
-        this.wordStates.clear();
-        this.activeWords.clear();
-        this.activeLines.clear();
-        
-        // Pulisci i riferimenti
-        this.scene = null;
-        this.font = null;
-        
-        // Rimuovi eventuali event listeners se presenti
-        // (nel caso ne aggiungessimo in futuro)
     }
 
     shuffleArray(array) {
@@ -320,151 +367,53 @@ export class WordManager {
         return array;
     }
 
-    handleMovementPhase(wordGroup, state, totalProgress, time) {
-        const moveOutProgress = totalProgress / MOVEMENT_TIME;
-        const radius = state.startRadius + 
-            (state.targetRadius - state.startRadius) * this.easeOutQuad(moveOutProgress);
-        
-        wordGroup.position.setFromSphericalCoords(
-            radius,
-            state.originalPosition.theta,
-            state.originalPosition.phi
-        );
-        wordGroup.lookAt(0, 0, 0);
-        wordGroup.rotateY(Math.PI);
-        
-        // Mostra le prime lettere con semitrasparenza
-        state.letters.forEach((letter, index) => {
-            if (index < state.initialLettersShown) {
-                letter.material.opacity = 0.5;
-                letter.material.color = state.processingColor;
-            } else {
-                letter.material.opacity = 0;
-            }
-        });
-        
-        // Posiziona e mostra il cursore
-        const lastVisibleLetter = state.letters[state.initialLettersShown - 1];
-        state.cursor.position.x = lastVisibleLetter.position.x + 0.08;
-        state.cursor.material.opacity = Math.sin(time * 15) * 0.5 + 0.5;
-        state.cursor.material.color = state.processingColor;
+    getRandomSpherePosition() {
+        const phi = Math.random() * Math.PI * 2;
+        const theta = Math.random() * Math.PI;
+        return { phi, theta };
     }
 
-    handleProcessingPhase(wordGroup, state, totalProgress, time) {
-        const processingProgress = (totalProgress - MOVEMENT_TIME) / PROCESSING_TIME;
-        wordGroup.position.normalize().multiplyScalar(state.targetRadius);
-        
-        state.isOnSurface = true;
-        
-        const remainingLetters = state.letters.length - state.initialLettersShown;
-        const currentLetterIndex = Math.floor(processingProgress * remainingLetters) + 
-            state.initialLettersShown;
-        
-        state.letters.forEach((letter, index) => {
-            if (index <= currentLetterIndex) {
-                letter.material.opacity = 0.5;
-                letter.material.color = state.processingColor;
-            } else {
-                letter.material.opacity = 0;
-            }
-        });
-        
-        if (currentLetterIndex < state.letters.length) {
-            const currentLetter = state.letters[currentLetterIndex];
-            state.cursor.position.x = currentLetter.position.x + 0.08;
-            state.cursor.material.opacity = Math.sin(time * 15) * 0.5 + 0.5;
-            state.cursor.visible = true;
-        } else {
-            state.cursor.visible = false;
-        }
-        
-        this.tryCreateLine(wordGroup, state, processingProgress);
-    }
+    updateWordsAnimation(progress, isEntering) {
+        if (!this.wordMeshes || this.wordMeshes.length === 0) return;
 
-    handleReturnPhase(wordGroup, state, totalProgress) {
-        const moveInProgress = (totalProgress - (MOVEMENT_TIME + PROCESSING_TIME)) / MOVEMENT_TIME;
-        const radius = state.targetRadius + 
-            (state.startRadius - state.targetRadius) * this.easeInQuad(moveInProgress);
-        
-        wordGroup.position.normalize().multiplyScalar(radius);
-        
-        state.letters.forEach(letter => {
-            letter.material.opacity = (1 - moveInProgress) * 0.5;
-        });
-        state.cursor.material.opacity = 0;
-    }
-
-    tryCreateLine(wordGroup, state, processingProgress) {
-        if (!state.hasCreatedLine && 
-            processingProgress > 0.2 && 
-            Math.random() < 0.1 && 
-            this.activeWords.size > 1) {
+        // Se stiamo entrando, attiviamo gradualmente le parole
+        if (isEntering && progress > 0.5 && this.activeWords.size === 0) {
+            // Attiva alcune parole iniziali
+            const initialWords = Math.floor(this.MAX_ACTIVE_WORDS * 0.5);
+            let activated = 0;
             
-            let availableTargets = Array.from(this.activeWords).filter(w => {
-                const targetState = this.wordStates.get(w);
-                return w !== wordGroup && 
-                       targetState.isOnSurface && 
-                       targetState.progress * TOTAL_ANIMATION_TIME > MOVEMENT_TIME;
+            this.wordMeshes.forEach(mesh => {
+                if (activated < initialWords && Math.random() < 0.5) {
+                    this.activateWord(mesh);
+                    activated++;
+                }
             });
-
-            if (availableTargets.length > 0) {
-                const targetWord = availableTargets[Math.floor(Math.random() * availableTargets.length)];
-                const startColor = this.PROCESSING_COLORS[
-                    Math.floor(Math.random() * this.PROCESSING_COLORS.length)
-                ];
-                const endColor = this.PROCESSING_COLORS[
-                    Math.floor(Math.random() * this.PROCESSING_COLORS.length)
-                ];
-                
-                const newLine = new AnimatedLine(wordGroup, targetWord, startColor, endColor);
-                this.activeLines.add(newLine);
-                state.hasCreatedLine = true;
-            }
         }
-    }
 
-    activateWord(mesh, state) {
-        state.active = true;
-        state.progress = 0;
-        state.hasCreatedLine = false;
-        
-        const newPos = this.getRandomSpherePosition();
-        state.originalPosition = {
-            phi: newPos.phi,
-            theta: newPos.theta
-        };
-        
-        mesh.position.setFromSphericalCoords(
-            TEXT_MIN_RADIUS,
-            newPos.theta,
-            newPos.phi
-        );
-        mesh.lookAt(0, 0, 0);
-        mesh.rotateY(Math.PI);
-        
-        this.activeWords.add(mesh);
-    }
+        // Se stiamo uscendo, disattiviamo tutte le parole
+        if (!isEntering && progress < 0.5) {
+            this.activeWords.forEach(word => {
+                const state = this.wordStates.get(word);
+                if (state) {
+                    this.deactivateWord(word, state);
+                }
+            });
+        }
 
-    deactivateWord(wordGroup, state) {
-        state.active = false;
-        state.progress = 0;
-        state.isOnSurface = false;
-        this.activeWords.delete(wordGroup);
-        
-        wordGroup.children.forEach(letter => {
-            if (letter.material) {
-                letter.material.opacity = 0;
+        // Aggiorna la visibilità globale
+        this.wordMeshes.forEach(mesh => {
+            if (!this.activeWords.has(mesh)) {
+                mesh.visible = isEntering;
+                mesh.scale.setScalar(0);
+                const state = this.wordStates.get(mesh);
+                if (state) {
+                    state.letters.forEach(letter => {
+                        letter.material.opacity = 0;
+                    });
+                }
             }
         });
-        state.cursor.material.opacity = 0;
-        wordGroup.position.setLength(TEXT_MIN_RADIUS);
     }
 
-    easeInQuad(t) {
-        return t * t;
-    }
-
-    easeOutQuad(t) {
-        return t * (2 - t);
-    }
+    // ... resto dei metodi esistenti ...
 }
