@@ -368,9 +368,31 @@ export class WordManager {
     }
 
     getRandomSpherePosition() {
-        const phi = Math.random() * Math.PI * 2;
-        const theta = Math.random() * Math.PI;
-        return { phi, theta };
+        // Usiamo la spirale di Fibonacci per una distribuzione più uniforme
+        const goldenRatio = (1 + Math.sqrt(5)) / 2;
+        const i = this.wordMeshes.length; // Usa l'indice corrente
+        const n = 200; // Numero totale di punti desiderati
+        
+        // Calcola la posizione sulla spirale
+        const theta = 2 * Math.PI * i / goldenRatio;
+        const phi = Math.acos(1 - 2 * (i + 0.5) / n);
+        
+        // Aggiungi una piccola variazione casuale per evitare un pattern troppo regolare
+        const randomOffset = 0.1; // Ridotto da quello che era prima
+        const thetaOffset = (Math.random() - 0.5) * randomOffset;
+        const phiOffset = (Math.random() - 0.5) * randomOffset;
+        
+        // Applica l'offset mantenendo i limiti validi
+        const finalTheta = (theta + thetaOffset) % (2 * Math.PI);
+        const finalPhi = Math.max(0.1, Math.min(Math.PI - 0.1, phi + phiOffset));
+        
+        // Aggiungi una rotazione casuale iniziale per variare il pattern
+        const initialRotation = Math.random() * Math.PI * 2;
+        
+        return {
+            theta: finalTheta + initialRotation,
+            phi: finalPhi
+        };
     }
 
     updateWordsAnimation(progress, isEntering) {

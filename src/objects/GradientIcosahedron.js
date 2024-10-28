@@ -4,8 +4,19 @@ export class GradientIcosahedron {
     constructor(radius = 2.2, detail = 1) {
         this.geometry = new THREE.IcosahedronGeometry(radius, detail);
         this.material = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0 },
+                noiseFrequency: { value: 0.5 },
+                noiseAmplitude: { value: 0.05 },
+                color1: { value: new THREE.Color("#FBD23D") },
+                color2: { value: new THREE.Color("#3EECFF") },
+                color3: { value: new THREE.Color("#EF6F34") },
+                color4: { value: new THREE.Color("#5C20DD") }
+            },
             vertexShader: `
                 uniform float time;
+                uniform float noiseFrequency;
+                uniform float noiseAmplitude;
                 
                 varying vec3 vPosition;
                 varying vec3 vNormal;
@@ -91,16 +102,12 @@ export class GradientIcosahedron {
                     vPosition = position;
                     vNormal = normal;
                     
-                    // Applica il noise alla posizione
-                    float noiseFreq = 0.5; // Frequenza del noise
-                    float noiseAmp = 0.1; // Ampiezza del movimento
-                    float noiseTime = time * 0.2; // Velocità del movimento
-                    
-                    vec3 noisePos = position * noiseFreq + noiseTime;
+                    // Usa i parametri uniformi per il noise
+                    vec3 noisePos = position * noiseFrequency + time * 0.2;
                     float noiseValue = snoise(noisePos);
                     
-                    // Muovi il vertice lungo la sua normale
-                    vec3 newPosition = position + normal * noiseValue * noiseAmp;
+                    // Applica il noise con l'ampiezza controllata
+                    vec3 newPosition = position + normal * noiseValue * noiseAmplitude;
                     
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
                 }
@@ -134,14 +141,7 @@ export class GradientIcosahedron {
                 }
             `,
             transparent: true,
-            wireframe: true,
-            uniforms: {
-                time: { value: 0 },
-                color1: { value: new THREE.Color("#FBD23D") },
-                color2: { value: new THREE.Color("#3EECFF") },
-                color3: { value: new THREE.Color("#EF6F34") },
-                color4: { value: new THREE.Color("#5C20DD") }
-            }
+            wireframe: true
         });
 
         // Stampa info sulla geometria in modo sicuro

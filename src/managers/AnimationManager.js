@@ -24,7 +24,6 @@ export class AnimationManager {
         }
 
         // Aggiornamenti regolari
-        this.sceneManager.updateRotation();
         this.sceneManager.updatePulsation(time);
         this.wordManager.updateWords(time);
     }

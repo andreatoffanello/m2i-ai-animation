@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { SPHERE_RADIUS, PARTICLE_COUNT, PARTICLE_SIZE } from '../constants/scene';
 import { PULSE_SPEED, PULSE_AMPLITUDE } from '../constants/animation';
 import particleVert from '../shaders/particle.vert?raw';
@@ -21,6 +22,8 @@ export class SceneManager {
         this.container = null;
         this.renderContainer = null;
         
+        this.icosahedron = null;
+        
         // Mouse interaction
         this.targetRotationX = 0;
         this.targetRotationY = 0;
@@ -28,8 +31,12 @@ export class SceneManager {
         this.mouseY = 0;
         this.windowHalfX = 0;
         this.windowHalfY = 0;
-
-        this.icosahedron = null;
+        
+        // Aggiungi uniforms per il noise
+        this.noiseUniforms = {
+            noiseAmplitude: { value: 0.1 },
+            noiseFrequency: { value: 1.0 }
+        };
     }
 
     init(container) {
@@ -48,14 +55,14 @@ export class SceneManager {
         
         this.setupCamera(width, height);
         this.setupRenderer(width, height);
+        this.setupMouseControls();
         this.setupParticles();
         this.setupInnerSphere();
         this.setupIcosahedron();
-        this.setupMouseControls();
         
         // Nascondi tutto inizialmente
         this.setVisibility(false);
-        this.scene.scale.setScalar(0); // Nascondi anche la scena
+        this.scene.scale.setScalar(0);
         
         this.renderContainer.appendChild(this.renderer.domElement);
     }
@@ -75,6 +82,87 @@ export class SceneManager {
         this.renderer.setSize(width, height);
         this.renderer.setClearColor(0x000000, 0);
         this.renderer.setPixelRatio(window.devicePixelRatio);
+    }
+
+    setupMouseControls() {
+        document.addEventListener('mousemove', this.onMouseMove.bind(this));
+        document.addEventListener('mouseleave', this.onMouseLeave.bind(this));
+    }
+
+    onMouseMove(event) {
+        // Calcola la posizione del mouse rispetto al centro della finestra
+        const windowHalfX = window.innerWidth / 2;
+        const windowHalfY = window.innerHeight / 2;
+        
+        this.mouseX = (event.clientX - windowHalfX) / windowHalfX;
+        this.mouseY = (event.clientY - windowHalfY) / windowHalfY;
+        
+        this.targetRotationY = this.mouseX * Math.PI;
+        this.targetRotationX = this.mouseY * Math.PI / 2;
+
+        // Calcola la distanza dal centro per l'effetto noise
+        const distanceFromCenter = Math.sqrt(this.mouseX * this.mouseX + this.mouseY * this.mouseY);
+        
+        // Modifica i parametri del noise in base alla distanza
+        if (distanceFromCenter < 1) {
+            const t = Math.pow(1 - distanceFromCenter, 3);
+            
+            // Aggiorna i parametri del noise per le particelle
+            this.uniforms.noiseFrequency.value = 1.0 + (4.0 - 1.0) * t;
+            this.uniforms.noiseAmplitude.value = 0.1 + (0.8 - 0.1) * t;
+            
+            // Aggiorna i parametri del noise per l'icosaedro
+            if (this.icosahedron && this.icosahedron.material.uniforms) {
+                this.icosahedron.material.uniforms.noiseFrequency.value = 0.5 + (2.0 - 0.5) * t;
+                this.icosahedron.material.uniforms.noiseAmplitude.value = 0.05 + (0.2 - 0.05) * t;
+            }
+        } else {
+            // Ripristina i valori di default
+            this.uniforms.noiseFrequency.value = 1.0;
+            this.uniforms.noiseAmplitude.value = 0.1;
+            
+            if (this.icosahedron && this.icosahedron.material.uniforms) {
+                this.icosahedron.material.uniforms.noiseFrequency.value = 0.5;
+                this.icosahedron.material.uniforms.noiseAmplitude.value = 0.05;
+            }
+        }
+    }
+
+    onMouseLeave() {
+        // Ritorna lentamente alla posizione neutrale
+        const duration = 1000;
+        const startRotationX = this.scene.rotation.x;
+        const startRotationY = this.scene.rotation.y;
+        const startTime = performance.now();
+        
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Funzione di easing
+            const easeOutQuad = t => t * (2 - t);
+            const eased = easeOutQuad(progress);
+            
+            this.scene.rotation.x = startRotationX * (1 - eased);
+            this.scene.rotation.y = startRotationY * (1 - eased);
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+        
+        requestAnimationFrame(animate);
+    }
+
+    updateRotation() {
+        // Aggiungiamo una leggera interpolazione solo per smussare i movimenti bruschi
+        const rotationLerp = 0.3; // Valore alto per un movimento rapido ma leggermente smussato
+        
+        const deltaX = this.targetRotationX - this.scene.rotation.x;
+        const deltaY = this.targetRotationY - this.scene.rotation.y;
+        
+        this.scene.rotation.x += deltaX * rotationLerp;
+        this.scene.rotation.y += deltaY * rotationLerp;
     }
 
     setupParticles() {
@@ -174,42 +262,6 @@ export class SceneManager {
         this.scene.add(this.icosahedron.mesh);
     }
 
-    setupMouseControls() {
-        document.addEventListener('mousemove', this.onMouseMove.bind(this));
-    }
-
-    onMouseMove(event) {
-        // Per la rotazione globale usiamo le coordinate della finestra
-        this.mouseX = (event.clientX - this.windowHalfX) / this.windowHalfX;
-        this.mouseY = (event.clientY - this.windowHalfY) / this.windowHalfY;
-        
-        this.targetRotationY = this.mouseX * Math.PI;
-        this.targetRotationX = this.mouseY * Math.PI / 2;
-
-        // Per l'effetto hover usiamo le coordinate relative al container
-        const rect = this.renderContainer.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        
-        // Calcola la distanza dal centro del container in coordinate normalizzate (-1 a 1)
-        const relativeX = (event.clientX - centerX) / (rect.width / 2);
-        const relativeY = (event.clientY - centerY) / (rect.height / 2);
-        
-        // Calcola la distanza dal centro usando le coordinate relative
-        const distanceFromCenter = Math.sqrt(relativeX * relativeX + relativeY * relativeY);
-        
-        // Modifica noise frequency e amplitude in base alla distanza dal centro del container
-        if (distanceFromCenter < 1) {
-            const t = Math.pow(1 - distanceFromCenter, 3);
-            
-            this.uniforms.noiseFrequency.value = 1.0 + (4.0 - 1.0) * t;
-            this.uniforms.noiseAmplitude.value = 0.1 + (0.8 - 0.1) * t;
-        } else {
-            this.uniforms.noiseFrequency.value = 1.0;
-            this.uniforms.noiseAmplitude.value = 0.1;
-        }
-    }
-
     updateParticlesScale(progress) {
         const positions = this.particles.geometry.attributes.position.array;
         for (let i = 0; i < positions.length; i += 3) {
@@ -231,12 +283,6 @@ export class SceneManager {
     updateInnerSphereScale(progress) {
         this.innerSphere.scale.setScalar(progress);
         this.innerSphere.material.opacity = progress;
-    }
-
-    updateRotation() {
-        const rotationLerp = 0.05;
-        this.scene.rotation.x += (this.targetRotationX - this.scene.rotation.x) * rotationLerp;
-        this.scene.rotation.y += (this.targetRotationY - this.scene.rotation.y) * rotationLerp;
     }
 
     updatePulsation(time) {
@@ -265,6 +311,7 @@ export class SceneManager {
     }
 
     render() {
+        this.updateRotation(); // Aggiorna la rotazione basata sul mouse
         this.renderer.render(this.scene, this.camera);
     }
 
@@ -282,13 +329,15 @@ export class SceneManager {
             this.scene.remove(this.icosahedron.mesh);
         }
         
-        document.removeEventListener('mousemove', this.onMouseMove);
-        
         if (this.renderContainer && this.renderContainer.parentNode) {
             this.renderContainer.parentNode.removeChild(this.renderContainer);
         }
         this.renderContainer = null;
         this.container = null;
+
+        // Rimuovi gli event listener dal document
+        document.removeEventListener('mousemove', this.onMouseMove);
+        document.removeEventListener('mouseleave', this.onMouseLeave);
     }
 
     setVisibility(visible) {
