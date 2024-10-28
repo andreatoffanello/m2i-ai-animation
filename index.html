@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Animation</title>
+    <style>
+        #ai_animation {
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            max-height: 400px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            pointer-events: none;
+            aspect-ratio: 1/1;
+        }
+
+        #ai_text {
+            position: fixed;
+            left: -9999px;
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body>
+    <textarea id="ai_text">Lorem ipsum dolor sit amet, consectetur adipiscing elit...</textarea>
+    <div id="ai_animation"></div>
+    
+    <script type="module">
+        import AiAnimation from '/src/index.js';
+        
+        window.addEventListener('load', function() {
+            window.aiAnimation = new AiAnimation({
+                containerId: 'ai_animation',
+                textareaId: 'ai_text'
+            });
+        });
+    </script>
+</body>
+</html>

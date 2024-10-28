@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Animation Dev</title>
+    <style>
+        #ai_animation {
+            width: 100%;
+            height: 100%;
+            max-width: 400px;
+            max-height: 400px;
+            z-index: 1000;
+            pointer-events: none;
+            aspect-ratio: 1/1;
+        }
+
+        .textarea {
+            width: 100%;
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        <form id="textForm">
+            <textarea id="ai_text" class="textarea">Lorem ipsum dolor sit amet consectetur adipisicing elit...</textarea>
+            <button type="submit">Load</button>
+            <div id="ai_animation"></div>
+        </form>
+    </div>
+        
+    <script type="module">
+        import AiAnimation from '/src/index.js';
+        
+        let animation;
+        let animationTimeout;
+
+        window.addEventListener('load', function() {
+            animation = new AiAnimation({
+                containerId: 'ai_animation'
+            });
+
+            document.getElementById('textForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                if (animationTimeout) {
+                    clearTimeout(animationTimeout);
+                }
+
+                const text = document.getElementById('ai_text').value;
+                animation.startEnterAnimation(text);
+
+                animationTimeout = setTimeout(() => {
+                    animation.startExitAnimation();
+                }, 10000);
+            });
+        });
+    </script>
+</body>
+</html>
