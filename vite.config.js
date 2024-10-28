@@ -1,27 +1,23 @@
 import { defineConfig } from 'vite';
-import glsl from 'vite-plugin-glsl';
+import { resolve } from 'path';
 
 export default defineConfig({
-  plugins: [
-    glsl({
-      include: [
-        '**/*.glsl',
-        '**/*.vert',
-        '**/*.frag',
-      ],
-      defaultExtension: 'glsl',
-      warnDuplicatedImports: true,
-      compress: true
-    })
-  ],
   build: {
+    // Configurazione per la build della libreria
     lib: {
-      entry: 'src/index.js',
+      entry: resolve(__dirname, 'src/AiAnimation.js'), // Il file principale della libreria
       name: 'AiAnimation',
       fileName: (format) => `ai-animation.${format}.js`,
-      formats: ['umd']
+      formats: ['es', 'umd']
     },
-    sourcemap: true,
-    minify: 'terser'
+    rollupOptions: {
+      // Esternalizziamo three.js
+      external: ['three'],
+      output: {
+        globals: {
+          three: 'THREE'
+        }
+      }
+    }
   }
 });

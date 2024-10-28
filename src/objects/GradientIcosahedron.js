@@ -154,23 +154,23 @@ export class GradientIcosahedron {
 
         this.mesh = new THREE.Mesh(this.geometry, this.material);
         
-        // Rotazione autonoma
+        // Aumentiamo significativamente la velocità di rotazione
         this.rotationSpeed = {
-            x: (Math.random() - 0.5) * 0.0002,
-            y: (Math.random() - 0.5) * 0.0002,
-            z: (Math.random() - 0.5) * 0.0002
+            x: (Math.random() - 0.5) * 0.001, // 5 volte più veloce
+            y: (Math.random() - 0.5) * 0.002, // 10 volte più veloce
+            z: (Math.random() - 0.5) * 0.0015 // 7.5 volte più veloce
         };
         
-        // Target rotation per movimento fluido
-        this.targetRotation = {
-            x: Math.random() * Math.PI * 2,
-            y: Math.random() * Math.PI * 2,
-            z: Math.random() * Math.PI * 2
-        };
-        
-        // Timer per cambiare direzione
-        this.directionChangeInterval = 5000;
+        // Cambiamo più frequentemente direzione
+        this.directionChangeInterval = 3000; // Ridotto da 5000 a 3000ms
         this.lastDirectionChange = 0;
+
+        // Aggiungiamo un fattore di accelerazione casuale
+        this.accelerationFactor = {
+            x: 1 + Math.random() * 0.5,
+            y: 1 + Math.random() * 0.5,
+            z: 1 + Math.random() * 0.5
+        };
 
         // Imposta la scala iniziale
         this.mesh.scale.setScalar(1);
@@ -183,17 +183,25 @@ export class GradientIcosahedron {
         // Cambia direzione periodicamente
         if (time - this.lastDirectionChange > this.directionChangeInterval) {
             this.targetRotation = {
-                x: Math.random() * Math.PI * 2,
-                y: Math.random() * Math.PI * 2,
-                z: Math.random() * Math.PI * 2
+                x: Math.random() * Math.PI * 4, // Raddoppiato il range di rotazione
+                y: Math.random() * Math.PI * 4,
+                z: Math.random() * Math.PI * 4
             };
+            
+            // Aggiorna casualmente i fattori di accelerazione
+            this.accelerationFactor = {
+                x: 1 + Math.random() * 0.5,
+                y: 1 + Math.random() * 0.5,
+                z: 1 + Math.random() * 0.5
+            };
+            
             this.lastDirectionChange = time;
         }
 
-        // Rotazione fluida verso il target
-        this.mesh.rotation.x += this.rotationSpeed.x;
-        this.mesh.rotation.y += this.rotationSpeed.y;
-        this.mesh.rotation.z += this.rotationSpeed.z;
+        // Rotazione con accelerazione variabile
+        this.mesh.rotation.x += this.rotationSpeed.x * this.accelerationFactor.x;
+        this.mesh.rotation.y += this.rotationSpeed.y * this.accelerationFactor.y;
+        this.mesh.rotation.z += this.rotationSpeed.z * this.accelerationFactor.z;
     }
 
     dispose() {

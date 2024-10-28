@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Animation Example</title>
+    <script src="https://unpkg.com/three/build/three.min.js"></script>
+    <script src="path/to/ai-animation.umd.js"></script>
+    <style>
+        #ai_animation {
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 1/1;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="ai_animation"></div>
+    <script>
+        const animation = new AiAnimation({
+            containerId: 'ai_animation'
+        });
+
+        // Avvia l'animazione
+        animation.startAnimation('Your text here');
+
+        // Ferma l'animazione dopo 10 secondi
+        setTimeout(() => {
+            animation.stopAnimation();
+        }, 10000);
+    </script>
+</body>
+</html> 

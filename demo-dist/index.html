@@ -198,6 +198,7 @@
 				animation: fadeInUp 0.5s ease forwards;
 			}
 		</style>
+		<script type="module" crossorigin src="/assets/main-qiYODnZs.js"></script>
 	</head>
 	<body>
 		<div id="wrapper">
@@ -232,46 +233,5 @@ Marco
 			</div>
 		</div>
 
-		<script type="module">
-			import AiAnimation from "/src/index.js";
-
-			let animation;
-			let animationTimeout;
-
-			window.addEventListener("load", function () {
-				animation = new AiAnimation({
-					containerId: "ai_animation",
-				});
-
-				const form = document.getElementById("textForm");
-				const aiContainer = document.getElementById("ai_animation");
-				const completionMessage = document.getElementById("completion-message");
-
-				form.addEventListener("submit", function (e) {
-					e.preventDefault();
-
-					if (animationTimeout) {
-						clearTimeout(animationTimeout);
-					}
-
-					form.classList.remove("visible");
-
-					setTimeout(() => {
-						aiContainer.classList.add("visible");
-						const text = document.getElementById("ai_text").value;
-						animation.startEnterAnimation(text);
-					}, 500);
-
-					animationTimeout = setTimeout(() => {
-						animation.startExitAnimation();
-
-						setTimeout(() => {
-							aiContainer.classList.remove("visible");
-							completionMessage.classList.add("visible");
-						}, 1000);
-					}, 20000);
-				});
-			});
-		</script>
 	</body>
 </html>
