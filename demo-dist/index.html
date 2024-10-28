@@ -85,17 +85,27 @@
 			}
 
 			#ai_animation {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
 				width: 100%;
-				height: 100%;
-				max-width: 400px;
-				max-height: 400px;
-				transform: translate(-50%, -50%) scale(0.9);
+				max-width: min(400px, 100vw);
+				aspect-ratio: 1/1;
+				opacity: 0;
+				visibility: hidden;
+				transition: opacity 0.5s ease, visibility 0.5s ease;
+			}
+
+			#ai_animation canvas {
+				width: 100% !important;
+				height: 100% !important;
+				aspect-ratio: 1/1;
 			}
 
 			#ai_animation.visible {
 				opacity: 1;
 				visibility: visible;
-				transform: translate(-50%, -50%) scale(1);
 			}
 
 			#completion-message {
@@ -198,7 +208,7 @@
 				animation: fadeInUp 0.5s ease forwards;
 			}
 		</style>
-		<script type="module" crossorigin src="/assets/main-qiYODnZs.js"></script>
+		<script type="module" crossorigin src="/assets/main-Dsb_hoZR.js"></script>
 	</head>
 	<body>
 		<div id="wrapper">

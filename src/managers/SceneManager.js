@@ -253,15 +253,15 @@ export class SceneManager {
     }
 
     onResize(width, height) {
-        // Usa le dimensioni del container interno
-        const rect = this.renderContainer.getBoundingClientRect();
-        const size = Math.min(rect.width, rect.height);
+        const containerSize = Math.min(width, height);
         
-        this.windowHalfX = size / 2;
-        this.windowHalfY = size / 2;
-        this.camera.aspect = 1; // Mantieni aspect ratio 1:1
+        this.windowHalfX = containerSize / 2;
+        this.windowHalfY = containerSize / 2;
+        
+        this.camera.aspect = 1; // Mantieni sempre aspect ratio 1:1
         this.camera.updateProjectionMatrix();
-        this.renderer.setSize(size, size);
+        
+        this.renderer.setSize(containerSize, containerSize);
     }
 
     render() {
