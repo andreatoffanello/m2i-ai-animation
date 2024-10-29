@@ -1,45 +1,36 @@
-// Aggiungiamo le variabili per tracciare il touch
-let isDragging = false;
-let previousTouch = { x: 0, y: 0 };
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-// Modifichiamo gli event listener per il touch
+let controls;
+
 function initTouchEvents(camera, renderer) {
-    renderer.domElement.addEventListener('touchstart', handleTouchStart);
-    renderer.domElement.addEventListener('touchmove', handleTouchMove);
-    renderer.domElement.addEventListener('touchend', handleTouchEnd);
-
-    function handleTouchStart(event) {
-        event.preventDefault();
-        isDragging = true;
-        const touch = event.touches[0];
-        previousTouch.x = touch.clientX;
-        previousTouch.y = touch.clientY;
+    // Verifichiamo se siamo su mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+        // Inizializziamo OrbitControls solo su mobile
+        controls = new OrbitControls(camera, renderer.domElement);
+        
+        // Configuriamo i controlli per una migliore esperienza mobile
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 5;
+        controls.maxDistance = 15;
+        controls.minPolarAngle = Math.PI / 4;
+        controls.maxPolarAngle = Math.PI / 1.5;
+        controls.enablePan = false;
+        controls.rotateSpeed = 0.5;
+        
+        // Disabilitiamo i controlli mouse quando usiamo OrbitControls
+        renderer.domElement.style.touchAction = 'none';
+        
+        // Restituiamo la funzione di update per OrbitControls
+        return function updateControls() {
+            controls.update();
+        };
+    } else {
+        // Su desktop non facciamo nulla, lasciamo i controlli mouse esistenti
+        return null;
     }
+}
 
-    function handleTouchMove(event) {
-        if (!isDragging) return;
-        
-        event.preventDefault();
-        const touch = event.touches[0];
-        
-        // Calcoliamo la differenza di movimento
-        const deltaX = touch.clientX - previousTouch.x;
-        const deltaY = touch.clientY - previousTouch.y;
-        
-        // Ruotiamo la camera in base al movimento
-        // Usiamo valori piccoli per una rotazione più fluida
-        camera.rotation.y += deltaX * 0.005;
-        camera.rotation.x += deltaY * 0.005;
-        
-        // Limitiamo la rotazione verticale per evitare capovolgimenti
-        camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
-        
-        // Aggiorniamo la posizione precedente
-        previousTouch.x = touch.clientX;
-        previousTouch.y = touch.clientY;
-    }
-
-    function handleTouchEnd() {
-        isDragging = false;
-    }
-} 
+export { initTouchEvents }; 

@@ -9,6 +9,7 @@ import innerSphereFrag from '../shaders/innerSphere.frag?raw';
 import { loadShader } from '../utils/shaderUtils';
 import Scene from '../scene/Scene';
 import { GradientIcosahedron } from '../objects/GradientIcosahedron';
+import { initTouchEvents } from '../../interaction.js';
 
 export class SceneManager {
     constructor(wordManager) {
@@ -37,6 +38,9 @@ export class SceneManager {
             noiseAmplitude: { value: 0.1 },
             noiseFrequency: { value: 1.0 }
         };
+        
+        // Rimuoviamo da qui l'inizializzazione dei controlli touch
+        this.updateControls = null;
     }
 
     init(container) {
@@ -59,6 +63,9 @@ export class SceneManager {
         this.setupParticles();
         this.setupInnerSphere();
         this.setupIcosahedron();
+        
+        // Inizializziamo i controlli touch qui, dopo aver creato camera e renderer
+        this.updateControls = initTouchEvents(this.camera, this.renderer);
         
         // Nascondi tutto inizialmente
         this.setVisibility(false);
@@ -311,7 +318,14 @@ export class SceneManager {
     }
 
     render() {
-        this.updateRotation(); // Aggiorna la rotazione basata sul mouse
+        if (this.updateControls) {
+            // Su mobile, usa OrbitControls
+            this.updateControls();
+        } else {
+            // Su desktop, usa i controlli mouse esistenti
+            this.updateRotation();
+        }
+        
         this.renderer.render(this.scene, this.camera);
     }
 

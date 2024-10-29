@@ -20,7 +20,7 @@ export class WordManager {
         this.font = null;
         
         // Costanti per l'animazione delle parole
-        this.MAX_ACTIVE_WORDS = 15;
+        this.MAX_ACTIVE_WORDS = 20;
         this.PROCESSING_COLORS = [
             new THREE.Color("#FBD23D"), // giallo
             new THREE.Color("#3EECFF"), // azzurro
@@ -34,8 +34,14 @@ export class WordManager {
             MOVE_OUT_DURATION: 1.0,    // Tempo per andare dal centro alla superficie
             SURFACE_DURATION: 2.0,      // Tempo sulla superficie
             MOVE_IN_DURATION: 1.0,      // Tempo per tornare al centro
-            TYPING_SPEED: 0.1          // Velocità di digitazione
+            TYPING_SPEED: 0.5          // Velocità di digitazione
         };
+
+        this.words = [];
+        this.activeWords = [];
+        this.currentIndex = 0;
+        this.isAnimating = false;
+        this.delayBetweenWords = 100; // 100ms di delay tra ogni parola
     }
 
     init(scene) {
@@ -140,7 +146,7 @@ export class WordManager {
             const typedLetters = Math.floor(surfaceProgress * state.letters.length);
             state.letters.forEach((letter, i) => {
                 if (i <= typedLetters) {
-                    letter.material.opacity = 0.5;
+                    letter.material.opacity = 0.75;
                 } else {
                     letter.material.opacity = 0;
                 }
@@ -241,7 +247,7 @@ export class WordManager {
         // Pulisci le strutture dati
         this.wordMeshes = [];
         this.wordStates.clear();
-        this.activeWords.clear();
+        this.activeWords = new Set();
         this.activeLines.forEach(line => {
             line.dispose();
             if (this.scene) {
@@ -298,7 +304,7 @@ export class WordManager {
                 letters.forEach((letter) => {
                     const letterGeometry = new TextGeometry(letter, {
                         font: this.font,
-                        size: 0.2,
+                        size: 0.3,
                         height: 0.01
                     });
                     
@@ -435,6 +441,47 @@ export class WordManager {
                 }
             }
         });
+    }
+
+    processText(text) {
+        // ... codice esistente ...
+    }
+
+    activateNextWordGroup() {
+        if (this.currentIndex >= this.words.length || this.isAnimating) {
+            return false;
+        }
+
+        this.isAnimating = true;
+        const currentWord = this.words[this.currentIndex];
+        this.activeWords.add(currentWord);
+
+        // Attiva le parole successive che sono nella stessa posizione Y
+        const currentY = currentWord.position.y;
+        let groupWords = [currentWord];
+        let nextIndex = this.currentIndex + 1;
+
+        while (nextIndex < this.words.length && 
+               Math.abs(this.words[nextIndex].position.y - currentY) < 0.1) {
+            groupWords.push(this.words[nextIndex]);
+            this.activeWords.add(this.words[nextIndex]);
+            nextIndex++;
+        }
+
+        // Anima ogni parola con un delay progressivo
+        groupWords.forEach((word, index) => {
+            setTimeout(() => {
+                word.activate();
+                
+                // Se è l'ultima parola del gruppo, sblocca l'animazione
+                if (index === groupWords.length - 1) {
+                    this.isAnimating = false;
+                }
+            }, index * this.delayBetweenWords);
+        });
+
+        this.currentIndex = nextIndex;
+        return true;
     }
 
     // ... resto dei metodi esistenti ...
