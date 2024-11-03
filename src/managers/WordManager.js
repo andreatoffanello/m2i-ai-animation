@@ -360,30 +360,58 @@ export class WordManager {
     }
 
     getRandomSpherePosition() {
-        // Usiamo la spirale di Fibonacci per una distribuzione più uniforme
-        const goldenRatio = (1 + Math.sqrt(5)) / 2;
-        const i = this.wordMeshes.length; // Usa l'indice corrente
-        const n = 200; // Numero totale di punti desiderati
+        const attempts = 50;
+        const minDistance = 0.5;
         
-        // Calcola la posizione sulla spirale
-        const theta = 2 * Math.PI * i / goldenRatio;
-        const phi = Math.acos(1 - 2 * (i + 0.5) / n);
+        for (let attempt = 0; attempt < attempts; attempt++) {
+            // Usa una distribuzione più casuale ma uniforme sulla sfera
+            const u = Math.random();
+            const v = Math.random();
+            
+            // Calcola le coordinate sferiche con una distribuzione più casuale
+            const theta = 2 * Math.PI * u;
+            const phi = Math.acos(2 * v - 1);
+            
+            // Aggiungi variazione casuale più ampia
+            const randomOffset = 0.3;
+            const thetaOffset = (Math.random() - 0.5) * randomOffset * Math.PI;
+            const phiOffset = (Math.random() - 0.5) * randomOffset * Math.PI;
+            
+            const finalTheta = (theta + thetaOffset) % (2 * Math.PI);
+            const finalPhi = Math.max(0.1, Math.min(Math.PI - 0.1, phi + phiOffset));
+            
+            // Converti in coordinate cartesiane per il controllo delle collisioni
+            const x = Math.sin(finalPhi) * Math.cos(finalTheta);
+            const y = Math.sin(finalPhi) * Math.sin(finalTheta);
+            const z = Math.cos(finalPhi);
+            
+            // Controlla la distanza dalle altre parole
+            let isValidPosition = true;
+            for (const mesh of this.wordMeshes) {
+                const pos = mesh.position;
+                const dx = pos.x - x;
+                const dy = pos.y - y;
+                const dz = pos.z - z;
+                const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                
+                if (distance < minDistance) {
+                    isValidPosition = false;
+                    break;
+                }
+            }
+            
+            if (isValidPosition || attempt === attempts - 1) {
+                return {
+                    theta: finalTheta,
+                    phi: finalPhi
+                };
+            }
+        }
         
-        // Aggiungi una piccola variazione casuale per evitare un pattern troppo regolare
-        const randomOffset = 0.1; // Ridotto da quello che era prima
-        const thetaOffset = (Math.random() - 0.5) * randomOffset;
-        const phiOffset = (Math.random() - 0.5) * randomOffset;
-        
-        // Applica l'offset mantenendo i limiti validi
-        const finalTheta = (theta + thetaOffset) % (2 * Math.PI);
-        const finalPhi = Math.max(0.1, Math.min(Math.PI - 0.1, phi + phiOffset));
-        
-        // Aggiungi una rotazione casuale iniziale per variare il pattern
-        const initialRotation = Math.random() * Math.PI * 2;
-        
+        // Fallback con posizione completamente casuale
         return {
-            theta: finalTheta + initialRotation,
-            phi: finalPhi
+            theta: Math.random() * Math.PI * 2,
+            phi: Math.acos(Math.random() * 2 - 1)
         };
     }
 

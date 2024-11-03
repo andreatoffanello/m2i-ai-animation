@@ -34,8 +34,8 @@ export const DEFAULT_OPTIONS = {
     },
 
     // Word behavior
-    MAX_ACTIVE_WORDS: 20,             // Numero massimo di parole animate contemporaneamente
-    WORD_DELAY: 100,                  // Ritardo tra l'animazione di una parola e la successiva (in millisecondi)
+    MAX_ACTIVE_WORDS: 8,             // Numero massimo di parole animate contemporaneamente
+    WORD_DELAY: 300,                  // Ritardo tra l'animazione di una parola e la successiva (in millisecondi)
 
     // Noise effect parameters
     NOISE: {
