@@ -1,7 +1,8 @@
-import { DEFAULT_TEXT_COLOR } from '../constants';  // invece di '../constants/colors'
+import { DEFAULT_OPTIONS } from '../constants';
 
 export class TextManager {
-    constructor() {
+    constructor(options = {}) {
+        this.options = { ...DEFAULT_OPTIONS, ...options };
         this.placeholderText = [
             "Three.js",
             "WebGL",

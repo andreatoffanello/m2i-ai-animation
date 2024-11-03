@@ -1,13 +1,10 @@
 import * as THREE from 'three';
-import { 
-    SPHERE_RADIUS,
-    PARTICLE_COUNT
-} from '../constants';  // invece di '../constants/scene'
 
 export default class Scene extends THREE.Scene {
-    constructor(wordManager) {
+    constructor(wordManager, options = {}) {
         super();
         
+        this.options = options;
         this.clock = new THREE.Clock();
         this.wordManager = wordManager;
         this.wordMeshes = [];

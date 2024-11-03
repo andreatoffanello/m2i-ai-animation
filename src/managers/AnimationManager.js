@@ -1,14 +1,9 @@
 import * as THREE from 'three';
-import { 
-    SCENE_ANIMATION_DURATION,
-    MOVEMENT_TIME,
-    PROCESSING_TIME,
-    TOTAL_ANIMATION_TIME
-} from '../constants';
 import { easeInBack, easeOutBack } from '../utils/math';
 
 export class AnimationManager {
-    constructor() {
+    constructor(options = {}) {
+        this.options = options;
         this.isSceneEntering = false;
         this.isSceneExiting = false;
         this.sceneAnimationProgress = 0;
@@ -34,7 +29,7 @@ export class AnimationManager {
     }
 
     updateSceneAnimation() {
-        this.sceneAnimationProgress += 0.016 / SCENE_ANIMATION_DURATION;
+        this.sceneAnimationProgress += 0.016 / this.options.SCENE_ANIMATION_DURATION;
         
         if (this.sceneAnimationProgress >= 1.0) {
             if (this.isSceneExiting) {

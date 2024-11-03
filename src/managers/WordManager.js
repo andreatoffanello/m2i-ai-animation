@@ -1,25 +1,15 @@
 import * as THREE from 'three';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
-import { 
-    TEXT_SPHERE_RADIUS, 
-    TEXT_MIN_RADIUS,
-    PROCESSING_COLORS,
-    WORD_ANIMATION,
-    MAX_ACTIVE_WORDS,
-    WORD_DELAY,
-    PULSE_SPEED, 
-    MOVEMENT_TIME, 
-    PROCESSING_TIME, 
-    TOTAL_ANIMATION_TIME 
-} from '../constants';
+import { DEFAULT_OPTIONS } from '../constants';
 
 export class WordManager {
-    constructor(textManager) {
+    constructor(textManager, options = {}) {
         if (!textManager) {
             throw new Error('TextManager is required');
         }
         this.textManager = textManager;
+        this.options = { ...DEFAULT_OPTIONS, ...options };
         this.text = '';
         this.scene = null;
         this.wordMeshes = [];
@@ -27,19 +17,16 @@ export class WordManager {
         this.activeWords = new Set();
         this.font = null;
         
-        // Usa le costanti importate
-        this.MAX_ACTIVE_WORDS = MAX_ACTIVE_WORDS;
-        this.PROCESSING_COLORS = PROCESSING_COLORS;
+        this.MAX_ACTIVE_WORDS = this.options.MAX_ACTIVE_WORDS;
+        this.PROCESSING_COLORS = this.options.PROCESSING_COLORS;
+        this.WORD_ANIMATION = this.options.WORD_ANIMATION;
         this._isInitialized = false;
-
-        // Usa la costante WORD_ANIMATION importata
-        this.WORD_ANIMATION = WORD_ANIMATION;
 
         this.words = [];
         this.activeWords = [];
         this.currentIndex = 0;
         this.isAnimating = false;
-        this.delayBetweenWords = WORD_DELAY;
+        this.delayBetweenWords = this.options.WORD_DELAY;
     }
 
     init(scene) {
@@ -116,7 +103,7 @@ export class WordManager {
         if (progress < this.WORD_ANIMATION.MOVE_OUT_DURATION) {
             const p = progress / this.WORD_ANIMATION.MOVE_OUT_DURATION;
             const eased = this.easeOutBack(p);
-            const radius = TEXT_MIN_RADIUS + (TEXT_SPHERE_RADIUS - TEXT_MIN_RADIUS) * eased;
+            const radius = this.options.TEXT_MIN_RADIUS + (this.options.TEXT_SPHERE_RADIUS - this.options.TEXT_MIN_RADIUS) * eased;
             
             word.position.setFromSphericalCoords(
                 radius,
@@ -156,7 +143,7 @@ export class WordManager {
                                   this.WORD_ANIMATION.SURFACE_DURATION)) / 
                                   this.WORD_ANIMATION.MOVE_IN_DURATION;
             const eased = this.easeInBack(moveInProgress);
-            const radius = TEXT_SPHERE_RADIUS - (TEXT_SPHERE_RADIUS - TEXT_MIN_RADIUS) * eased;
+            const radius = this.options.TEXT_SPHERE_RADIUS - (this.options.TEXT_SPHERE_RADIUS - this.options.TEXT_MIN_RADIUS) * eased;
             
             word.position.setFromSphericalCoords(
                 radius,
@@ -181,7 +168,7 @@ export class WordManager {
         
         // Reset della posizione iniziale
         mesh.position.setFromSphericalCoords(
-            TEXT_MIN_RADIUS,
+            this.options.TEXT_MIN_RADIUS,
             state.originalPosition.theta,
             state.originalPosition.phi
         );
@@ -202,7 +189,7 @@ export class WordManager {
         
         // Resetta la posizione
         word.position.setFromSphericalCoords(
-            TEXT_MIN_RADIUS,
+            this.options.TEXT_MIN_RADIUS,
             state.originalPosition.theta,
             state.originalPosition.phi
         );
@@ -288,7 +275,7 @@ export class WordManager {
                 
                 // Scegli un colore random dalla palette
                 const randomColor = new THREE.Color(
-                    PROCESSING_COLORS[Math.floor(Math.random() * PROCESSING_COLORS.length)]
+                    this.options.PROCESSING_COLORS[Math.floor(Math.random() * this.options.PROCESSING_COLORS.length)]
                 );
                 
                 // Crea le lettere
@@ -324,7 +311,7 @@ export class WordManager {
                 
                 const randomPos = this.getRandomSpherePosition();
                 wordGroup.position.setFromSphericalCoords(
-                    TEXT_MIN_RADIUS,
+                    this.options.TEXT_MIN_RADIUS,
                     randomPos.theta,
                     randomPos.phi
                 );

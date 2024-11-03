@@ -1,13 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { 
-    SPHERE_RADIUS, 
-    PARTICLE_COUNT, 
-    PARTICLE_SIZE,
-    PULSE_SPEED, 
-    PULSE_AMPLITUDE,
-    PROCESSING_COLORS
-} from '../constants';
+import { DEFAULT_OPTIONS } from '../constants';
 import particleVert from '../shaders/particle.vert?raw';
 import particleFrag from '../shaders/particle.frag?raw';
 import innerSphereVert from '../shaders/innerSphere.vert?raw';
@@ -18,9 +11,10 @@ import { GradientIcosahedron } from '../objects/GradientIcosahedron';
 import { initTouchEvents } from '../../interaction.js';
 
 export class SceneManager {
-    constructor(wordManager) {
+    constructor(wordManager, options = {}) {
+        this.options = { ...DEFAULT_OPTIONS, ...options };
         this.wordManager = wordManager;
-        this.scene = new Scene(this.wordManager);
+        this.scene = new Scene(this.wordManager, this.options);
         this.camera = null;
         this.renderer = null;
         this.particles = null;
@@ -39,13 +33,11 @@ export class SceneManager {
         this.windowHalfX = 0;
         this.windowHalfY = 0;
         
-        // Aggiungi uniforms per il noise
         this.noiseUniforms = {
-            noiseAmplitude: { value: 0.1 },
-            noiseFrequency: { value: 1.0 }
+            noiseAmplitude: { value: this.options.NOISE.AMPLITUDE },
+            noiseFrequency: { value: this.options.NOISE.FREQUENCY }
         };
         
-        // Rimuoviamo da qui l'inizializzazione dei controlli touch
         this.updateControls = null;
     }
 
@@ -120,23 +112,25 @@ export class SceneManager {
         if (distanceFromCenter < 1) {
             const t = Math.pow(1 - distanceFromCenter, 3);
             
-            // Aggiorna i parametri del noise per le particelle
-            this.uniforms.noiseFrequency.value = 1.0 + (4.0 - 1.0) * t;
-            this.uniforms.noiseAmplitude.value = 0.1 + (0.8 - 0.1) * t;
+            // Aggiorna i parametri del noise per le particelle usando le options
+            this.uniforms.noiseFrequency.value = this.options.NOISE.FREQUENCY + (4.0 - this.options.NOISE.FREQUENCY) * t;
+            this.uniforms.noiseAmplitude.value = this.options.NOISE.AMPLITUDE + (0.8 - this.options.NOISE.AMPLITUDE) * t;
             
-            // Aggiorna i parametri del noise per l'icosaedro
+            // Aggiorna i parametri del noise per l'icosaedro usando le options
             if (this.icosahedron && this.icosahedron.material.uniforms) {
-                this.icosahedron.material.uniforms.noiseFrequency.value = 0.5 + (2.0 - 0.5) * t;
-                this.icosahedron.material.uniforms.noiseAmplitude.value = 0.05 + (0.2 - 0.05) * t;
+                this.icosahedron.material.uniforms.noiseFrequency.value = 
+                    this.options.NOISE.FREQUENCY/2 + (2.0 - this.options.NOISE.FREQUENCY/2) * t;
+                this.icosahedron.material.uniforms.noiseAmplitude.value = 
+                    this.options.NOISE.AMPLITUDE/2 + (0.2 - this.options.NOISE.AMPLITUDE/2) * t;
             }
         } else {
-            // Ripristina i valori di default
-            this.uniforms.noiseFrequency.value = 1.0;
-            this.uniforms.noiseAmplitude.value = 0.1;
+            // Ripristina i valori di default dalle options
+            this.uniforms.noiseFrequency.value = this.options.NOISE.FREQUENCY;
+            this.uniforms.noiseAmplitude.value = this.options.NOISE.AMPLITUDE;
             
             if (this.icosahedron && this.icosahedron.material.uniforms) {
-                this.icosahedron.material.uniforms.noiseFrequency.value = 0.5;
-                this.icosahedron.material.uniforms.noiseAmplitude.value = 0.05;
+                this.icosahedron.material.uniforms.noiseFrequency.value = this.options.NOISE.FREQUENCY/2;
+                this.icosahedron.material.uniforms.noiseAmplitude.value = this.options.NOISE.AMPLITUDE/2;
             }
         }
     }
@@ -179,29 +173,29 @@ export class SceneManager {
     }
 
     setupParticles() {
-        const geometry = new THREE.SphereGeometry(SPHERE_RADIUS, 64, 64);
+        const geometry = new THREE.SphereGeometry(this.options.SPHERE_RADIUS, 64, 64);
         const positions = geometry.attributes.position.array;
         const normals = geometry.attributes.normal.array;
-        const colors = new Float32Array(PARTICLE_COUNT * 3);
+        const colors = new Float32Array(this.options.PARTICLE_COUNT * 3);
 
-        const particlePositions = new Float32Array(PARTICLE_COUNT * 3);
-        const particleNormals = new Float32Array(PARTICLE_COUNT * 3);
+        const particlePositions = new Float32Array(this.options.PARTICLE_COUNT * 3);
+        const particleNormals = new Float32Array(this.options.PARTICLE_COUNT * 3);
 
-        const color1 = new THREE.Color(PROCESSING_COLORS[0]);
-        const color2 = new THREE.Color(PROCESSING_COLORS[1]);
-        const color3 = new THREE.Color(PROCESSING_COLORS[2]);
-        const color4 = new THREE.Color(PROCESSING_COLORS[3]);
+        const color1 = new THREE.Color(this.options.PROCESSING_COLORS[0]);
+        const color2 = new THREE.Color(this.options.PROCESSING_COLORS[1]);
+        const color3 = new THREE.Color(this.options.PROCESSING_COLORS[2]);
+        const color4 = new THREE.Color(this.options.PROCESSING_COLORS[3]);
 
-        for (let i = 0; i < PARTICLE_COUNT; i++) {
+        for (let i = 0; i < this.options.PARTICLE_COUNT; i++) {
             // Generazione di punti uniformemente distribuiti sulla sfera
             const u = Math.random();
             const v = Math.random();
             const theta = 2 * Math.PI * u;
             const phi = Math.acos(2 * v - 1);
             
-            const x = SPHERE_RADIUS * Math.sin(phi) * Math.cos(theta);
-            const y = SPHERE_RADIUS * Math.sin(phi) * Math.sin(theta);
-            const z = SPHERE_RADIUS * Math.cos(phi);
+            const x = this.options.SPHERE_RADIUS * Math.sin(phi) * Math.cos(theta);
+            const y = this.options.SPHERE_RADIUS * Math.sin(phi) * Math.sin(theta);
+            const z = this.options.SPHERE_RADIUS * Math.cos(phi);
 
             particlePositions[i * 3] = x;
             particlePositions[i * 3 + 1] = y;
@@ -214,9 +208,9 @@ export class SceneManager {
             particleNormals[i * 3 + 2] = normal.z;
 
             const color = new THREE.Color().lerpColors(
-                color1.clone().lerp(color2, (x + SPHERE_RADIUS) / (2 * SPHERE_RADIUS)),
-                color3.clone().lerp(color4, (y + SPHERE_RADIUS) / (2 * SPHERE_RADIUS)),
-                (z + SPHERE_RADIUS) / (2 * SPHERE_RADIUS)
+                color1.clone().lerp(color2, (x + this.options.SPHERE_RADIUS) / (2 * this.options.SPHERE_RADIUS)),
+                color3.clone().lerp(color4, (y + this.options.SPHERE_RADIUS) / (2 * this.options.SPHERE_RADIUS)),
+                (z + this.options.SPHERE_RADIUS) / (2 * this.options.SPHERE_RADIUS)
             );
 
             colors[i * 3] = color.r;
@@ -231,10 +225,10 @@ export class SceneManager {
 
         this.uniforms = {
             time: { value: 1.0 },
-            noiseAmplitude: { value: 0.1 },
-            noiseFrequency: { value: 1.0 },
+            noiseAmplitude: { value: this.options.NOISE.AMPLITUDE },
+            noiseFrequency: { value: this.options.NOISE.FREQUENCY },
             pulseTime: { value: 0.0 },
-            particleSize: { value: PARTICLE_SIZE }  // Aggiungiamo questa uniform
+            particleSize: { value: this.options.PARTICLE_SIZE }
         };
 
         const material = new THREE.ShaderMaterial({
@@ -254,10 +248,10 @@ export class SceneManager {
         const material = new THREE.ShaderMaterial({
             uniforms: {
                 time: { value: 0 },
-                color1: { value: new THREE.Color(PROCESSING_COLORS[0]) },
-                color2: { value: new THREE.Color(PROCESSING_COLORS[1]) },
-                color3: { value: new THREE.Color(PROCESSING_COLORS[2]) },
-                color4: { value: new THREE.Color(PROCESSING_COLORS[3]) }
+                color1: { value: new THREE.Color(this.options.PROCESSING_COLORS[0]) },
+                color2: { value: new THREE.Color(this.options.PROCESSING_COLORS[1]) },
+                color3: { value: new THREE.Color(this.options.PROCESSING_COLORS[2]) },
+                color4: { value: new THREE.Color(this.options.PROCESSING_COLORS[3]) }
             },
             vertexShader: loadShader(innerSphereVert),
             fragmentShader: loadShader(innerSphereFrag),
@@ -271,7 +265,7 @@ export class SceneManager {
     }
 
     setupIcosahedron() {
-        this.icosahedron = new GradientIcosahedron(2.2, 1);
+        this.icosahedron = new GradientIcosahedron(2.2, 1, this.options);
         this.scene.add(this.icosahedron.mesh);
     }
 
@@ -284,7 +278,7 @@ export class SceneManager {
                 positions[i + 2]
             ).normalize();
             
-            const scale = progress * SPHERE_RADIUS;
+            const scale = progress * this.options.SPHERE_RADIUS;
             
             positions[i] = originalPos.x * scale;
             positions[i + 1] = originalPos.y * scale;
@@ -300,10 +294,10 @@ export class SceneManager {
 
     updatePulsation(time) {
         this.uniforms.time.value = time;
-        this.uniforms.pulseTime.value = time * PULSE_SPEED;
+        this.uniforms.pulseTime.value = time * this.options.PULSE_SPEED;
         
-        this.innerSphere.material.uniforms.time.value = time * PULSE_SPEED;
-        const pulseFactor = 1 + Math.sin(time * PULSE_SPEED) * PULSE_AMPLITUDE;
+        this.innerSphere.material.uniforms.time.value = time * this.options.PULSE_SPEED;
+        const pulseFactor = 1 + Math.sin(time * this.options.PULSE_SPEED) * this.options.PULSE_AMPLITUDE;
         this.innerSphere.scale.setScalar(pulseFactor);
 
         if (this.icosahedron) {
