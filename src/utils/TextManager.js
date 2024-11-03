@@ -1,3 +1,5 @@
+import { DEFAULT_TEXT_COLOR } from '../constants';  // invece di '../constants/colors'
+
 export class TextManager {
     constructor() {
         this.placeholderText = [

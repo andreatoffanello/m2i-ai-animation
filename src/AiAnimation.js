@@ -2,6 +2,11 @@ import { SceneManager } from './managers/SceneManager';
 import { AnimationManager } from './managers/AnimationManager';
 import { WordManager } from './managers/WordManager';
 import { TextManager } from './utils/TextManager';
+import { 
+    SCENE_ANIMATION_DURATION,
+    MOVEMENT_TIME,
+    PROCESSING_TIME
+} from './constants';
 
 export class AiAnimation {
     constructor(config = {}) {

@@ -1,7 +1,13 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { SPHERE_RADIUS, PARTICLE_COUNT, PARTICLE_SIZE } from '../constants/scene';
-import { PULSE_SPEED, PULSE_AMPLITUDE } from '../constants/animation';
+import { 
+    SPHERE_RADIUS, 
+    PARTICLE_COUNT, 
+    PARTICLE_SIZE,
+    PULSE_SPEED, 
+    PULSE_AMPLITUDE,
+    PROCESSING_COLORS
+} from '../constants';
 import particleVert from '../shaders/particle.vert?raw';
 import particleFrag from '../shaders/particle.frag?raw';
 import innerSphereVert from '../shaders/innerSphere.vert?raw';
@@ -181,10 +187,10 @@ export class SceneManager {
         const particlePositions = new Float32Array(PARTICLE_COUNT * 3);
         const particleNormals = new Float32Array(PARTICLE_COUNT * 3);
 
-        const color1 = new THREE.Color("#FBD23D");
-        const color2 = new THREE.Color("#3EECFF");
-        const color3 = new THREE.Color("#EF6F34");
-        const color4 = new THREE.Color("#5C20DD");
+        const color1 = new THREE.Color(PROCESSING_COLORS[0]);
+        const color2 = new THREE.Color(PROCESSING_COLORS[1]);
+        const color3 = new THREE.Color(PROCESSING_COLORS[2]);
+        const color4 = new THREE.Color(PROCESSING_COLORS[3]);
 
         for (let i = 0; i < PARTICLE_COUNT; i++) {
             // Generazione di punti uniformemente distribuiti sulla sfera
@@ -248,10 +254,10 @@ export class SceneManager {
         const material = new THREE.ShaderMaterial({
             uniforms: {
                 time: { value: 0 },
-                color1: { value: new THREE.Color("#FBD23D") },
-                color2: { value: new THREE.Color("#3EECFF") },
-                color3: { value: new THREE.Color("#EF6F34") },
-                color4: { value: new THREE.Color("#5C20DD") }
+                color1: { value: new THREE.Color(PROCESSING_COLORS[0]) },
+                color2: { value: new THREE.Color(PROCESSING_COLORS[1]) },
+                color3: { value: new THREE.Color(PROCESSING_COLORS[2]) },
+                color4: { value: new THREE.Color(PROCESSING_COLORS[3]) }
             },
             vertexShader: loadShader(innerSphereVert),
             fragmentShader: loadShader(innerSphereFrag),

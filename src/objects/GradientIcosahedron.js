@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { PROCESSING_COLORS } from '../constants';
 
 export class GradientIcosahedron {
     constructor(radius = 2.2, detail = 1) {
@@ -8,10 +9,10 @@ export class GradientIcosahedron {
                 time: { value: 0 },
                 noiseFrequency: { value: 0.5 },
                 noiseAmplitude: { value: 0.05 },
-                color1: { value: new THREE.Color("#FBD23D") },
-                color2: { value: new THREE.Color("#3EECFF") },
-                color3: { value: new THREE.Color("#EF6F34") },
-                color4: { value: new THREE.Color("#5C20DD") }
+                color1: { value: new THREE.Color(PROCESSING_COLORS[0]) },
+                color2: { value: new THREE.Color(PROCESSING_COLORS[1]) },
+                color3: { value: new THREE.Color(PROCESSING_COLORS[2]) },
+                color4: { value: new THREE.Color(PROCESSING_COLORS[3]) }
             },
             vertexShader: `
                 uniform float time;

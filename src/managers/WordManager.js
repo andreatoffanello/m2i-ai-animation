@@ -1,8 +1,18 @@
 import * as THREE from 'three';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
-import { TEXT_SPHERE_RADIUS, TEXT_MIN_RADIUS } from '../constants/scene';
-import { PULSE_SPEED, MOVEMENT_TIME, PROCESSING_TIME, TOTAL_ANIMATION_TIME } from '../constants/animation';
+import { 
+    TEXT_SPHERE_RADIUS, 
+    TEXT_MIN_RADIUS,
+    PROCESSING_COLORS,
+    WORD_ANIMATION,
+    MAX_ACTIVE_WORDS,
+    WORD_DELAY,
+    PULSE_SPEED, 
+    MOVEMENT_TIME, 
+    PROCESSING_TIME, 
+    TOTAL_ANIMATION_TIME 
+} from '../constants';
 
 export class WordManager {
     constructor(textManager) {
@@ -17,29 +27,19 @@ export class WordManager {
         this.activeWords = new Set();
         this.font = null;
         
-        // Costanti per l'animazione delle parole
-        this.MAX_ACTIVE_WORDS = 20;
-        this.PROCESSING_COLORS = [
-            new THREE.Color("#FBD23D"), // giallo
-            new THREE.Color("#3EECFF"), // azzurro
-            new THREE.Color("#EF6F34"), // arancione
-            new THREE.Color("#5C20DD")  // viola
-        ];
+        // Usa le costanti importate
+        this.MAX_ACTIVE_WORDS = MAX_ACTIVE_WORDS;
+        this.PROCESSING_COLORS = PROCESSING_COLORS;
         this._isInitialized = false;
 
-        // Aggiungiamo costanti per l'animazione
-        this.WORD_ANIMATION = {
-            MOVE_OUT_DURATION: 1.0,    // Tempo per andare dal centro alla superficie
-            SURFACE_DURATION: 2.0,      // Tempo sulla superficie
-            MOVE_IN_DURATION: 1.0,      // Tempo per tornare al centro
-            TYPING_SPEED: 0.5          // Velocità di digitazione
-        };
+        // Usa la costante WORD_ANIMATION importata
+        this.WORD_ANIMATION = WORD_ANIMATION;
 
         this.words = [];
         this.activeWords = [];
         this.currentIndex = 0;
         this.isAnimating = false;
-        this.delayBetweenWords = 100; // 100ms di delay tra ogni parola
+        this.delayBetweenWords = WORD_DELAY;
     }
 
     init(scene) {
@@ -287,9 +287,9 @@ export class WordManager {
                 const wordGroup = new THREE.Group();
                 
                 // Scegli un colore random dalla palette
-                const randomColor = this.PROCESSING_COLORS[
-                    Math.floor(Math.random() * this.PROCESSING_COLORS.length)
-                ];
+                const randomColor = new THREE.Color(
+                    PROCESSING_COLORS[Math.floor(Math.random() * PROCESSING_COLORS.length)]
+                );
                 
                 // Crea le lettere
                 letters.forEach((letter) => {

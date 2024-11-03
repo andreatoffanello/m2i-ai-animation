@@ -1,5 +1,10 @@
 import * as THREE from 'three';
-import { SCENE_ANIMATION_DURATION } from '../constants/animation';
+import { 
+    SCENE_ANIMATION_DURATION,
+    MOVEMENT_TIME,
+    PROCESSING_TIME,
+    TOTAL_ANIMATION_TIME
+} from '../constants';
 import { easeInBack, easeOutBack } from '../utils/math';
 
 export class AnimationManager {
