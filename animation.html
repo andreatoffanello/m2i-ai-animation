@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>AI Animation Dev</title>
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,0,0" />
+		<link rel="stylesheet" href="style.css" />
+	</head>
+
+	<body>
+		<div id="ai_animation" style="opacity: 1; visibility: visible;"></div>
+
+		<script type="module">
+			import AiAnimation from "/src/index.js";
+
+			let animation;
+
+			let animationTimeout;
+
+			let text = "Buongiorno, mi chiamo Marco e attualmente vivo e lavoro all'estero da circa cinque anni. Ho deciso di rientrare in Italia e sono interessato a comprendere come il Regime del Rientro dei Cervelli possa influenzare la mia situazione fiscale. Attualmente, lavoro come ingegnere in una multinazionale e ho un contratto a tempo indeterminato. Vorrei sapere se, per poter accedere ai benefici fiscali offerti da questo regime, devo soddisfare determinati requisiti specifici in termini di permanenza all'estero e tipo di contratto. Inoltre, mi interessa capire se ci sono agevolazioni particolari per chi ha già un'esperienza professionale consolidata all'estero e come queste possano interagire con eventuali investimenti o attività lavorative che intendo avviare al mio rientro in Italia. Infine, avrei bisogno di chiarimenti su come gestire le mie dichiarazioni fiscali, sia per il periodo in cui ho vissuto all'estero, sia per i redditi che intendo guadagnare in Italia. Resto in attesa di una consulenza per discutere queste questioni in dettaglio e valutare le strategie più adatte per la mia situazione. Grazie mille!"
+
+			window.addEventListener("load", function () {
+				animation = new AiAnimation({
+					containerId: "ai_animation",
+					onInitialized: () => {
+						console.log("Animation initialized");
+						animation.startEnterAnimation(text);
+					},
+				});
+
+			});
+		</script>
+	</body>
+</html>
