@@ -9,6 +9,7 @@ import { loadShader } from '../utils/shaderUtils';
 import Scene from '../scene/Scene';
 import { GradientIcosahedron } from '../objects/GradientIcosahedron';
 import { initTouchEvents } from '../../interaction.js';
+import { LogoM } from '../objects/LogoM';
 
 export class SceneManager {
     constructor(wordManager, options = {}) {
@@ -39,6 +40,11 @@ export class SceneManager {
         };
         
         this.updateControls = null;
+        
+        this.logoM = null;
+        
+        // Aggiungi il clock
+        this.clock = new THREE.Clock();
     }
 
     init(container) {
@@ -170,6 +176,11 @@ export class SceneManager {
         
         this.scene.rotation.x += deltaX * rotationLerp;
         this.scene.rotation.y += deltaY * rotationLerp;
+        
+        // Aggiorna anche il logo M se necessario
+        if (this.logoM) {
+            this.logoM.update(this.clock.getElapsedTime());
+        }
     }
 
     setupParticles() {
@@ -244,24 +255,30 @@ export class SceneManager {
     }
 
     setupInnerSphere() {
-        const geometry = new THREE.SphereGeometry(0.8, 64, 64);
-        const material = new THREE.ShaderMaterial({
-            uniforms: {
-                time: { value: 0 },
-                color1: { value: new THREE.Color(this.options.PROCESSING_COLORS[0]) },
-                color2: { value: new THREE.Color(this.options.PROCESSING_COLORS[1]) },
-                color3: { value: new THREE.Color(this.options.PROCESSING_COLORS[2]) },
-                color4: { value: new THREE.Color(this.options.PROCESSING_COLORS[3]) }
-            },
-            vertexShader: loadShader(innerSphereVert),
-            fragmentShader: loadShader(innerSphereFrag),
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            side: THREE.DoubleSide
-        });
+        if (this.options.CENTRAL_ELEMENT === 'logo') {
+            this.logoM = new LogoM(this.options);
+            this.logoM.group.position.set(0, 0, 0);
+            this.scene.add(this.logoM.group);
+        } else {
+            const geometry = new THREE.SphereGeometry(0.8, 64, 64);
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 },
+                    color1: { value: new THREE.Color(this.options.PROCESSING_COLORS[0]) },
+                    color2: { value: new THREE.Color(this.options.PROCESSING_COLORS[1]) },
+                    color3: { value: new THREE.Color(this.options.PROCESSING_COLORS[2]) },
+                    color4: { value: new THREE.Color(this.options.PROCESSING_COLORS[3]) }
+                },
+                vertexShader: loadShader(innerSphereVert),
+                fragmentShader: loadShader(innerSphereFrag),
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                side: THREE.DoubleSide
+            });
 
-        this.innerSphere = new THREE.Mesh(geometry, material);
-        this.scene.add(this.innerSphere);
+            this.innerSphere = new THREE.Mesh(geometry, material);
+            this.scene.add(this.innerSphere);
+        }
     }
 
     setupIcosahedron() {
@@ -296,9 +313,11 @@ export class SceneManager {
         this.uniforms.time.value = time;
         this.uniforms.pulseTime.value = time * this.options.PULSE_SPEED;
         
-        this.innerSphere.material.uniforms.time.value = time * this.options.PULSE_SPEED;
-        const pulseFactor = 1 + Math.sin(time * this.options.PULSE_SPEED) * this.options.PULSE_AMPLITUDE;
-        this.innerSphere.scale.setScalar(pulseFactor);
+        if (this.options.CENTRAL_ELEMENT === 'sphere' && this.innerSphere) {
+            this.innerSphere.material.uniforms.time.value = time * this.options.PULSE_SPEED;
+            const pulseFactor = 1 + Math.sin(time * this.options.PULSE_SPEED) * this.options.PULSE_AMPLITUDE;
+            this.innerSphere.scale.setScalar(pulseFactor);
+        }
 
         if (this.icosahedron) {
             this.icosahedron.update(time);
@@ -333,10 +352,19 @@ export class SceneManager {
         // Cleanup resources
         this.particles.geometry.dispose();
         this.particles.material.dispose();
-        this.innerSphere.geometry.dispose();
-        this.innerSphere.material.dispose();
+        
+        if (this.options.CENTRAL_ELEMENT === 'sphere' && this.innerSphere) {
+            this.innerSphere.geometry.dispose();
+            this.innerSphere.material.dispose();
+            this.scene.remove(this.innerSphere);
+        }
+        
+        if (this.options.CENTRAL_ELEMENT === 'logo' && this.logoM) {
+            this.logoM.dispose();
+            this.scene.remove(this.logoM.group);
+        }
+        
         this.scene.remove(this.particles);
-        this.scene.remove(this.innerSphere);
         
         if (this.icosahedron) {
             this.icosahedron.dispose();
@@ -356,7 +384,12 @@ export class SceneManager {
 
     setVisibility(visible) {
         if (this.particles) this.particles.visible = visible;
-        if (this.innerSphere) this.innerSphere.visible = visible;
+        if (this.options.CENTRAL_ELEMENT === 'sphere' && this.innerSphere) {
+            this.innerSphere.visible = visible;
+        }
+        if (this.options.CENTRAL_ELEMENT === 'logo' && this.logoM) {
+            this.logoM.group.visible = visible;
+        }
         if (this.scene.wordMeshes) {
             this.scene.wordMeshes.forEach(mesh => mesh.visible = visible);
         }

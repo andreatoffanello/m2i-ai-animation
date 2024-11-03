@@ -41,7 +41,22 @@ export const DEFAULT_OPTIONS = {
     NOISE: {
         AMPLITUDE: 0.1,               // Intensità dell'effetto di distorsione del noise
         FREQUENCY: 1.0                // Frequenza dell'effetto noise (più alto = più dettagliato)
-    }
+    },
+
+    // Opzione per scegliere il tipo di elemento centrale
+    CENTRAL_ELEMENT: 'sphere', // può essere 'sphere' o 'logo'
+
+    // Logo options
+    LOGO: {
+        SIZE: 1.6,           // Dimensione complessiva del logo
+        DEPTH: 0.2,          // Profondità dell'estrusione
+        COLOR: '#6952FF',    // Colore del logo
+        OPACITY: 0.75,        // Opacità base del logo
+        PULSE: {
+            SPEED: 1.5,      // Aumentato da 0.5 a 1.5 per un pulse più veloce
+            AMPLITUDE: 0.1    // Aumentato da 0.05 a 0.1 per un pulse più visibile
+        }
+    },
 };
 
 // Funzione per combinare le opzioni di default con quelle personalizzate
@@ -56,6 +71,11 @@ export function createOptions(customOptions = {}) {
         NOISE: {
             ...DEFAULT_OPTIONS.NOISE,
             ...(customOptions.NOISE || {})
+        },
+        // Aggiungiamo il merge delle opzioni del LOGO
+        LOGO: {
+            ...DEFAULT_OPTIONS.LOGO,
+            ...(customOptions.LOGO || {})
         }
     };
 }
