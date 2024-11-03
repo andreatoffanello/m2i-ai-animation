@@ -1,4 +1,5 @@
 uniform float time;
+uniform float baseOpacity;
 uniform vec3 color1;
 uniform vec3 color2;
 uniform vec3 color3;
@@ -50,7 +51,7 @@ void main() {
     finalColor += iridescence * fresnelTerm; // Aggiunge l'iridescenza modulata dal Fresnel
     
     // Regola l'opacità per mantenere la trasparenza ai bordi
-    float alpha = mix(0.2, 0.9, (1.0 - fresnelTerm * 0.7) * (1.0 - darkSpots * 0.4));
+    float alpha = mix(0.2, 0.9, (1.0 - fresnelTerm * 0.7) * (1.0 - darkSpots * 0.4)) * baseOpacity;
     
     gl_FragColor = vec4(finalColor, alpha);
 }

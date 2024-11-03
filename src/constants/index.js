@@ -51,7 +51,7 @@ export const DEFAULT_OPTIONS = {
         SIZE: 1.6,           // Dimensione complessiva del logo
         DEPTH: 0.2,          // Profondità dell'estrusione
         COLOR: '#6952FF',    // Colore del logo
-        OPACITY: 0.75,        // Opacità base del logo
+        OPACITY: 1,        // Opacità base del logo
         PULSE: {
             SPEED: 1.5,      // Aumentato da 0.5 a 1.5 per un pulse più veloce
             AMPLITUDE: 0.1    // Aumentato da 0.05 a 0.1 per un pulse più visibile

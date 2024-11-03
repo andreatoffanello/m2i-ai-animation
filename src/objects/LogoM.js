@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
 import { DEFAULT_OPTIONS } from '../constants';
+import logoVert from '../shaders/logo.vert?raw';
+import logoFrag from '../shaders/logo.frag?raw';
+import { loadShader } from '../utils/shaderUtils';
 
 export class LogoM {
     constructor(options = {}) {
@@ -17,15 +20,6 @@ export class LogoM {
         this.baseOpacity = options.LOGO?.OPACITY || defaultLogoOptions.OPACITY;
         this.basePulseScale = 1.0;
         
-        console.log('Logo options:', {
-            color: this.color,
-            depth: this.depth,
-            size: this.size,
-            pulseSpeed: this.pulseSpeed,
-            pulseAmplitude: this.pulseAmplitude,
-            opacity: this.baseOpacity
-        });
-        
         this.createLogoFromSVG();
     }
 
@@ -40,17 +34,24 @@ export class LogoM {
         const loader = new SVGLoader();
         const svgData = loader.parse(svgMarkup);
 
-        // Calcola il fattore di scala
         const viewBoxWidth = 479.28;
         const viewBoxHeight = 479.28;
         const scale = this.size / Math.max(viewBoxWidth, viewBoxHeight);
 
-        // Crea materiale
-        const material = new THREE.MeshBasicMaterial({
-            color: this.color,
-            side: THREE.DoubleSide,
+        // Crea shader material
+        const shaderMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0 },
+                baseOpacity: { value: this.baseOpacity },
+                color1: { value: new THREE.Color(this.options.PROCESSING_COLORS?.[0] || '#FBD23D') },
+                color2: { value: new THREE.Color(this.options.PROCESSING_COLORS?.[1] || '#3EECFF') },
+                color3: { value: new THREE.Color(this.options.PROCESSING_COLORS?.[2] || '#EF6F34') },
+                color4: { value: new THREE.Color(this.options.PROCESSING_COLORS?.[3] || '#5C20DD') }
+            },
+            vertexShader: loadShader(logoVert),
+            fragmentShader: loadShader(logoFrag),
             transparent: true,
-            opacity: this.baseOpacity
+            side: THREE.DoubleSide
         });
 
         svgData.paths.forEach((path) => {
@@ -67,9 +68,7 @@ export class LogoM {
                 const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
                 geometry.computeBoundingBox();
                 
-                const mesh = new THREE.Mesh(geometry, material);
-                
-                // Applica scala mantenendo la profondità
+                const mesh = new THREE.Mesh(geometry, shaderMaterial);
                 mesh.scale.set(-scale, -scale, 1);
                 
                 this.group.add(mesh);
@@ -87,22 +86,24 @@ export class LogoM {
             mesh.position.z = -this.depth/2;
         });
 
-        // Posiziona il gruppo al centro
         this.group.position.set(0, 0, 0);
     }
 
     update(time) {
-        // Applica l'effetto pulse con valori più pronunciati
-        const pulseScale = this.basePulseScale + Math.sin(time * this.pulseSpeed) * this.pulseAmplitude;
-        this.group.scale.setScalar(pulseScale);
-        
-        // Fai pulsare anche l'opacità
-        const opacityPulse = this.baseOpacity + Math.sin(time * this.pulseSpeed) * 0.1;
+        // Aggiorna il tempo nello shader
         this.group.children.forEach(mesh => {
-            if (mesh.material) {
-                mesh.material.opacity = opacityPulse;
+            if (mesh.material.uniforms) {
+                mesh.material.uniforms.time.value = time;
+                
+                // Aggiorna l'opacità con il pulse
+                const opacityPulse = this.baseOpacity + Math.sin(time * this.pulseSpeed) * 0.1;
+                mesh.material.uniforms.baseOpacity.value = opacityPulse;
             }
         });
+
+        // Applica l'effetto pulse
+        const pulseScale = this.basePulseScale + Math.sin(time * this.pulseSpeed) * this.pulseAmplitude;
+        this.group.scale.setScalar(pulseScale);
     }
 
     dispose() {
