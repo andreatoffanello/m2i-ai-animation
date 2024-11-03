@@ -3,7 +3,6 @@ import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { TEXT_SPHERE_RADIUS, TEXT_MIN_RADIUS } from '../constants/scene';
 import { PULSE_SPEED, MOVEMENT_TIME, PROCESSING_TIME, TOTAL_ANIMATION_TIME } from '../constants/animation';
-import { AnimatedLine } from '../classes/AnimatedLine';
 
 export class WordManager {
     constructor(textManager) {
@@ -16,7 +15,6 @@ export class WordManager {
         this.wordMeshes = [];
         this.wordStates = new Map();
         this.activeWords = new Set();
-        this.activeLines = new Set();
         this.font = null;
         
         // Costanti per l'animazione delle parole
@@ -248,13 +246,6 @@ export class WordManager {
         this.wordMeshes = [];
         this.wordStates.clear();
         this.activeWords = new Set();
-        this.activeLines.forEach(line => {
-            line.dispose();
-            if (this.scene) {
-                this.scene.remove(line.line);
-            }
-        });
-        this.activeLines.clear();
 
         // Ricrea la sfera di testo
         if (this._isInitialized && this.scene) {
@@ -484,5 +475,21 @@ export class WordManager {
         return true;
     }
 
-    // ... resto dei metodi esistenti ...
+    dispose() {
+        if (this.wordMeshes) {
+            this.wordMeshes.forEach(mesh => {
+                if (this.scene) {
+                    this.scene.remove(mesh);
+                }
+                if (mesh.geometry) mesh.geometry.dispose();
+                if (mesh.material) {
+                    if (Array.isArray(mesh.material)) {
+                        mesh.material.forEach(mat => mat.dispose());
+                    } else {
+                        mesh.material.dispose();
+                    }
+                }
+            });
+        }
+    }
 }

@@ -4,4 +4,3 @@ export const PROCESSING_TIME = 2.5;
 export const TOTAL_ANIMATION_TIME = MOVEMENT_TIME * 2 + PROCESSING_TIME;
 export const PULSE_SPEED = 2.0;
 export const PULSE_AMPLITUDE = 0.1;
-export const LINE_DURATION = 0.5;
