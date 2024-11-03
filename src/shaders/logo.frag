@@ -26,9 +26,21 @@ void main() {
         0.5 + sin(time * 0.6) * 0.5
     );
     
-    // Aggiungi un leggero effetto di brillantezza uniforme
-    float brightness = 0.9 + sin(time * 1.0) * 0.1;
+    // Aumenta la luminosità e la saturazione per un effetto fluo
+    finalColor = pow(finalColor, vec3(0.85)); // Aumenta la luminosità
+    finalColor *= 1.2; // Aumenta l'intensità generale
+    
+    // Aggiungi un effetto di brillantezza pulsante più intenso
+    float brightness = 0.9 + sin(time * 1.0) * 0.2; // Aumentato da 0.1 a 0.2
     finalColor *= brightness;
+    
+    // Aggiungi un leggero bloom
+    float bloomIntensity = 0.15;
+    vec3 bloom = finalColor * bloomIntensity;
+    finalColor += bloom;
+    
+    // Assicurati che i colori non superino il range valido
+    finalColor = clamp(finalColor, vec3(0.0), vec3(1.0));
     
     gl_FragColor = vec4(finalColor, baseOpacity);
 } 
