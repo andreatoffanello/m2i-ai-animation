@@ -1,6 +1,6 @@
-# AI Animation Library
+# M2I 3D Animation
 
-Una libreria JavaScript per creare animazioni 3D interattive con Three.js, progettata specificamente per visualizzare l'elaborazione di testo tramite AI.
+Una visualizzazione 3D interattiva creata con Three.js, progettata specificamente per visualizzare l'elaborazione di testo tramite AI nel progetto M2I.
 
 ## 📋 Caratteristiche
 
@@ -11,19 +11,33 @@ Una libreria JavaScript per creare animazioni 3D interattive con Three.js, proge
 - Gestione responsive del canvas
 - Animazioni fluide di entrata/uscita
 
-## 🚀 Installazione
+## 🚀 Implementazione
 
-```bash
-npm install ai-animation
+### ES Modules
+```javascript
+import { M2IAnimation } from 'path/to/m2i-animation.es.js';
+```
+
+### UMD (Browser)
+```html
+<script src="path/to/m2i-animation.umd.js"></script>
+```
+
+### Differenze tra le versioni
+- **ES Module** (`m2i-animation.es.js`): Per progetti che utilizzano bundler moderni (webpack, vite, rollup)
+- **UMD** (`m2i-animation.umd.js`): Per l'uso diretto nel browser tramite tag script
+
+### Dipendenze Esterne
+Assicurati di includere:
+```html
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
 ```
 
 ## 🎯 Utilizzo Base
 
 ```javascript
-import AiAnimation from 'ai-animation';
-
-const animation = new AiAnimation({
-  containerId: "ai_animation",
+const animation = new M2IAnimation({
+  containerId: "m2i_animation",
   options: {
     // opzioni personalizzate (opzionale)
   },
@@ -44,7 +58,7 @@ animation.stopAnimation();
 ### Parametri del Costruttore
 
 ```typescript
-interface AiAnimationConfig {
+interface M2IAnimationConfig {
   containerId: string;      // ID dell'elemento DOM che conterrà l'animazione
   options?: AnimationOptions; // Opzioni di configurazione (opzionale)
   onInitialized?: () => void; // Callback chiamato quando l'animazione è pronta
@@ -101,8 +115,8 @@ const DEFAULT_OPTIONS = {
 Puoi sovrascrivere qualsiasi opzione passandola al costruttore:
 
 ```javascript
-const animation = new AiAnimation({
-  containerId: "ai_animation",
+const animation = new M2IAnimation({
+  containerId: "m2i_animation",
   options: {
     WORD_DELAY: 300,           // Ritardo tra le parole (ms)
     PULSE_AMPLITUDE: 0.1,      // Ampiezza della pulsazione
@@ -144,7 +158,7 @@ animation.dispose();
 L'animazione utilizza questi stili CSS di base che possono essere personalizzati:
 
 ```css
-#ai_animation {
+#m2i_animation {
     width: 100vw;
     height: 100vh;
     position: fixed;
@@ -154,13 +168,13 @@ L'animazione utilizza questi stili CSS di base che possono essere personalizzati
     pointer-events: none;
 }
 
-#ai_text {
+#m2i_text {
     position: fixed;
     left: -9999px;
     visibility: hidden;
 }
 
-.ai-animation-container {
+.m2i-animation-container {
     width: 100%;
     height: 100%;
     position: relative;
@@ -172,7 +186,7 @@ L'animazione utilizza questi stili CSS di base che possono essere personalizzati
 L'animazione si adatta automaticamente alle dimensioni del container. Per una visualizzazione ottimale, assicurati che il container abbia un aspect ratio di 1:1 (quadrato).
 
 ```css
-#ai_animation {
+#m2i_animation {
   width: 100%;
   max-width: 600px;
   aspect-ratio: 1/1;
@@ -185,9 +199,9 @@ L'animazione si adatta automaticamente alle dimensioni del container. Per una vi
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AI Animation Demo</title>
+  <title>M2I Animation Demo</title>
   <style>
-    #ai_animation {
+    #m2i_animation {
       width: 100%;
       max-width: 600px;
       aspect-ratio: 1/1;
@@ -196,13 +210,12 @@ L'animazione si adatta automaticamente alle dimensioni del container. Per una vi
   </style>
 </head>
 <body>
-  <div id="ai_animation"></div>
+  <div id="m2i_animation"></div>
   
-  <script type="module">
-    import AiAnimation from 'ai-animation';
-    
-    const animation = new AiAnimation({
-      containerId: "ai_animation",
+  <script src="path/to/m2i-animation.js"></script>
+  <script>
+    const animation = new M2IAnimation({
+      containerId: "m2i_animation",
       options: {
         WORD_DELAY: 300,
         PULSE_AMPLITUDE: 0.1
@@ -233,3 +246,7 @@ Se l'animazione non appare:
 2. Controlla la console per eventuali errori
 3. Assicurati che Three.js sia caricato correttamente
 4. Verifica che il container abbia dimensioni non nulle
+
+## 📦 Dipendenze
+
+- Three.js ^0.160.0

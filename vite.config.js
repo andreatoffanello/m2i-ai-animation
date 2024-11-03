@@ -6,8 +6,8 @@ export default defineConfig({
     // Configurazione per la build della libreria
     lib: {
       entry: resolve(__dirname, 'src/AiAnimation.js'), // Il file principale della libreria
-      name: 'AiAnimation',
-      fileName: (format) => `ai-animation.${format}.js`,
+      name: 'M2IAnimation',
+      fileName: (format) => `m2i-animation.${format}.js`,
       formats: ['es', 'umd']
     },
     rollupOptions: {
