@@ -39,7 +39,7 @@ Marco</textarea
 				</div>
 			</div>
 
-			<div id="ai_animation"></div>
+			<div id="ai_animation"></div> <!-- Container per l'animazione -->
 
 			<div id="completion-message">
 				<h3>Elaborazione Completata</h3>
@@ -63,19 +63,18 @@ Marco</textarea
 
 			window.addEventListener("load", function () {
 				const form = document.getElementById("textForm");
-
 				const aiContainer = document.getElementById("ai_animation");
-
 				const completionMessage = document.getElementById("completion-message");
-
 				const loaderContainer = document.querySelector(".loader-container");
 
+				// Inizializza l'animazione
 				animation = new AiAnimation({
-					containerId: "ai_animation",
-
-					onInitialized: () => {
+					containerId: "ai_animation", // ID del container per l'animazione
+					options: {
+						// sovrascrivi le opzioni predefinite con quelle desiderate
+					},
+					onInitialized: () => { // Callback chiamato quando l'animazione è pronta
 						loaderContainer.classList.remove("visible");
-
 						form.classList.add("visible");
 					},
 				});
@@ -88,32 +87,26 @@ Marco</textarea
 					}
 
 					form.classList.remove("visible");
-
 					loaderContainer.classList.add("visible");
 
 					setTimeout(() => {
 						loaderContainer.classList.remove("visible");
-
 						aiContainer.classList.add("visible");
 
 						const text = document.getElementById("ai_text").value;
-
-						animation.startEnterAnimation(text);
+						animation.startAnimation(text); // Animazione di ingresso
 					}, 500);
 
 					animationTimeout = setTimeout(() => {
-						animation.startExitAnimation();
-
+						animation.stopAnimation(); // Animazione di uscita
 						setTimeout(() => {
 							aiContainer.classList.remove("visible");
-
 							completionMessage.classList.add("visible");
 						}, 1000);
-					}, 20000);
+					}, 10000);
 				});
 
 				loaderContainer.classList.add("visible");
-
 				form.classList.remove("visible");
 			});
 		</script>

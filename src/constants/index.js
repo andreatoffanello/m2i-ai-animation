@@ -2,45 +2,45 @@ import { Color } from 'three';
 
 // Definiamo tutte le costanti in un oggetto
 export const DEFAULT_OPTIONS = {
-    // Animation constants
-    SCENE_ANIMATION_DURATION: 2.0,
-    MOVEMENT_TIME: 0.6,
-    PROCESSING_TIME: 2.5,
-    PULSE_SPEED: 2.0,
-    PULSE_AMPLITUDE: 0.1,
+    // Animation timing constants
+    SCENE_ANIMATION_DURATION: 2.0,    // Durata dell'animazione di entrata/uscita della scena completa (in secondi)
+    MOVEMENT_TIME: 0.6,               // Tempo impiegato per il movimento delle parole (in secondi)
+    PROCESSING_TIME: 2.5,             // Durata della fase di elaborazione/stasi (in secondi)
+    PULSE_SPEED: 2.0,                 // Velocità della pulsazione della sfera interna (più alto = più veloce)
+    PULSE_AMPLITUDE: 0.1,             // Ampiezza della pulsazione (quanto grande diventa la sfera durante la pulsazione)
 
-    // Scene constants
-    PARTICLE_SIZE: 0.005,
-    PARTICLE_COUNT: 30000,
-    SPHERE_RADIUS: 2.0,
-    TEXT_SPHERE_RADIUS: 2.3,
-    TEXT_MIN_RADIUS: 0.1,
+    // Scene geometry constants
+    PARTICLE_SIZE: 0.005,             // Dimensione delle singole particelle nella sfera esterna
+    PARTICLE_COUNT: 30000,            // Numero totale di particelle nella sfera esterna
+    SPHERE_RADIUS: 2.0,               // Raggio della sfera di particelle
+    TEXT_SPHERE_RADIUS: 2.3,          // Raggio della sfera dove appaiono le parole
+    TEXT_MIN_RADIUS: 0.1,             // Raggio minimo quando le parole sono al centro
 
-    // Color constants
+    // Color palette
     PROCESSING_COLORS: [
-        "#FBD23D", // giallo
-        "#3EECFF", // azzurro
-        "#EF6F34", // arancione
-        "#5C20DD"  // viola
+        "#FBD23D",                    // Giallo - Colore primario per le particelle e il testo
+        "#3EECFF",                    // Azzurro - Colore secondario
+        "#EF6F34",                    // Arancione - Colore terziario
+        "#5C20DD"                     // Viola - Colore quaternario
     ],
-    DEFAULT_TEXT_COLOR: "#3EECFF",
+    DEFAULT_TEXT_COLOR: "#3EECFF",    // Colore di default per il testo
 
-    // Word Animation constants
+    // Word animation timing
     WORD_ANIMATION: {
-        MOVE_OUT_DURATION: 1.0,
-        SURFACE_DURATION: 2.0,
-        MOVE_IN_DURATION: 1.0,
-        TYPING_SPEED: 0.5
+        MOVE_OUT_DURATION: 1.0,       // Tempo per l'animazione dal centro alla superficie (in secondi)
+        SURFACE_DURATION: 2.0,        // Tempo di permanenza sulla superficie (in secondi)
+        MOVE_IN_DURATION: 1.0,        // Tempo per l'animazione dalla superficie al centro (in secondi)
+        TYPING_SPEED: 0.5             // Velocità dell'effetto di digitazione delle lettere
     },
 
-    // Other constants
-    MAX_ACTIVE_WORDS: 20,
-    WORD_DELAY: 100,
+    // Word behavior
+    MAX_ACTIVE_WORDS: 20,             // Numero massimo di parole animate contemporaneamente
+    WORD_DELAY: 100,                  // Ritardo tra l'animazione di una parola e la successiva (in millisecondi)
 
-    // Noise constants
+    // Noise effect parameters
     NOISE: {
-        AMPLITUDE: 0.1,
-        FREQUENCY: 1.0
+        AMPLITUDE: 0.1,               // Intensità dell'effetto di distorsione del noise
+        FREQUENCY: 1.0                // Frequenza dell'effetto noise (più alto = più dettagliato)
     }
 };
 
