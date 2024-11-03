@@ -247,7 +247,6 @@ export class WordManager {
             .map(word => word.trim())
             .filter(word => word);
         
-        // Se non ci sono parole valide, usa un placeholder
         if (words.length === 0) {
             words = this.textManager.getText();
         }
@@ -263,6 +262,9 @@ export class WordManager {
         
         // Mischia le parole
         this.shuffleArray(finalWords);
+
+        // Salva le parole per l'animazione sequenziale
+        this.words = [];
         
         // Crea le mesh per ogni parola
         finalWords.forEach((word, index) => {
@@ -329,6 +331,7 @@ export class WordManager {
                 });
                 
                 this.wordMeshes.push(wordGroup);
+                this.words.push(wordGroup); // Aggiungi alla lista di parole da animare
                 if (this.scene) {
                     this.scene.add(wordGroup);
                 }
@@ -341,6 +344,11 @@ export class WordManager {
         if (this.scene) {
             this.scene.updateWordMeshes(this.wordMeshes);
         }
+
+        // Avvia l'animazione sequenziale
+        this.currentIndex = 0;
+        this.isAnimating = false;
+        this.startWordAnimation();
     }
 
     shuffleArray(array) {
@@ -449,13 +457,13 @@ export class WordManager {
         // Anima ogni parola con un delay progressivo
         groupWords.forEach((word, index) => {
             setTimeout(() => {
-                word.activate();
+                this.activateWord(word);
                 
                 // Se è l'ultima parola del gruppo, sblocca l'animazione
                 if (index === groupWords.length - 1) {
                     this.isAnimating = false;
                 }
-            }, index * this.delayBetweenWords);
+            }, index * this.options.WORD_DELAY);
         });
 
         this.currentIndex = nextIndex;
@@ -478,5 +486,16 @@ export class WordManager {
                 }
             });
         }
+    }
+
+    // Nuovo metodo per avviare l'animazione sequenziale
+    startWordAnimation() {
+        const animate = () => {
+            if (this.activateNextWordGroup()) {
+                // Se ci sono ancora parole da animare, continua
+                setTimeout(animate, this.options.WORD_DELAY);
+            }
+        };
+        animate();
     }
 }
